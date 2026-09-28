@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/pokemon.dart';
+
 const Map<String, Color> typeColors = {
   'normal': Color(0xFFA8A77A),
   'fire': Color(0xFFEE8130),
@@ -22,3 +24,27 @@ const Map<String, Color> typeColors = {
 };
 
 Color colorForType(String type) => typeColors[type] ?? Colors.grey;
+
+/// Nombres de los tipos en español para mostrarlos en la interfaz.
+const Map<String, String> typeNamesEs = {
+  'normal': 'Normal',
+  'fire': 'Fuego',
+  'water': 'Agua',
+  'electric': 'Eléctrico',
+  'grass': 'Planta',
+  'ice': 'Hielo',
+  'fighting': 'Lucha',
+  'poison': 'Veneno',
+  'ground': 'Tierra',
+  'flying': 'Volador',
+  'psychic': 'Psíquico',
+  'bug': 'Bicho',
+  'rock': 'Roca',
+  'ghost': 'Fantasma',
+  'dragon': 'Dragón',
+  'dark': 'Siniestro',
+  'steel': 'Acero',
+  'fairy': 'Hada',
+};
+
+String typeNameEs(String type) => typeNamesEs[type] ?? capitalize(type);
