@@ -20,8 +20,7 @@ class PokeArenaApp extends StatelessWidget {
         Provider<PokeApiService>(create: (_) => PokeApiService()),
         // Cada módulo registra aquí su propio provider (equipo, batalla, quiz, perfil).
         ChangeNotifierProvider<PokedexProvider>(
-          create: (ctx) =>
-              PokedexProvider(ctx.read<PokeApiService>())..loadMore(),
+          create: (ctx) => PokedexProvider(ctx.read<PokeApiService>())..load(),
         ),
       ],
       child: MaterialApp(
