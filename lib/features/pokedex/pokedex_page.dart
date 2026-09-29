@@ -146,10 +146,10 @@ class _PokedexPageState extends State<PokedexPage> {
               : GridView.builder(
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.9,
+                    maxCrossAxisExtent: 220,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.45,
                   ),
                   itemCount: items.length,
                   itemBuilder: (context, i) => _PokemonCard(
@@ -183,11 +183,11 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
-/// Tarjeta de Pokémon con animaciones hover premium:
-/// - Elevación + traslación vertical suave
-/// - Escala del sprite con curva easeOutBack
-/// - Glow del color del tipo en el borde
-/// - Fondo degradado sutil del color del tipo al hacer hover
+/// Tarjeta estilo DIO (referencia del usuario):
+/// fondo con el color del tipo primario, #ID arriba-derecha, nombre
+/// arriba-izquierda, badges de tipo a la izquierda y sprite a la derecha
+/// sobre círculo blanco semitransparente. Mantiene hover premium
+/// (elevación + escala del sprite + glow del tipo).
 class _PokemonCard extends StatefulWidget {
   final PokemonSummary pokemon;
   const _PokemonCard({super.key, required this.pokemon});
@@ -227,10 +227,12 @@ class _PokemonCardState extends State<_PokemonCard>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    // Usa el color primario del tema para el glow en la lista
-    // (PokemonSummary no incluye tipos; el tipo real se carga en PokemonDetailPage)
-    final glowColor = Theme.of(context).colorScheme.primary;
+    // Solo re-escucha los tipos de ESTE id para no reconstruir toda la grilla.
+    final types = context.select<PokedexProvider, List<String>>(
+      (p) => p.typesFor(widget.pokemon.id),
+    );
+    final baseColor =
+        types.isNotEmpty ? colorForType(types.first) : Colors.blueGrey;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -247,34 +249,17 @@ class _PokemonCardState extends State<_PokemonCard>
           builder: (context, child) {
             final t = _hoverAnim.value;
             return Transform.translate(
-              offset: Offset(0, -6 * t),
+              offset: Offset(0, -5 * t),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color.lerp(
-                    scheme.surfaceContainerHighest,
-                    glowColor.withValues(alpha: 0.14),
-                    t,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Color.lerp(
-                      scheme.outlineVariant.withValues(alpha: 0.0),
-                      glowColor.withValues(alpha: 0.65),
-                      t,
-                    )!,
-                    width: 1.5,
-                  ),
+                  color: Color.lerp(baseColor, Colors.black, t * 0.08),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: glowColor.withValues(alpha: 0.22 * t),
-                      blurRadius: 16 * t,
-                      spreadRadius: 2 * t,
-                      offset: Offset(0, 6 * t),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06 + 0.08 * t),
-                      blurRadius: 4 + 8 * t,
-                      offset: Offset(0, 2 + 4 * t),
+                      color: baseColor.withValues(alpha: 0.35 + 0.25 * t),
+                      blurRadius: 8 + 10 * t,
+                      spreadRadius: 1 * t,
+                      offset: Offset(0, 3 + 4 * t),
                     ),
                   ],
                 ),
@@ -282,47 +267,138 @@ class _PokemonCardState extends State<_PokemonCard>
               ),
             );
           },
-          child: Column(
+          child: Stack(
             children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: AnimatedBuilder(
-                    animation: _hoverAnim,
-                    builder: (context, child) => Transform.scale(
-                      scale: 1.0 + 0.12 * _hoverAnim.value,
-                      child: child,
-                    ),
-                    child: Image.network(
-                      widget.pokemon.imageUrl,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (c, child, prog) => prog == null
-                          ? child
-                          : const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2)),
-                      errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
-                    ),
+              // Marca de agua Pokébola como la referencia (imagen 2):
+              // aro grande delgado + banda central + botón interno,
+              // inclinado y casi completo dentro de la tarjeta.
+              Positioned(
+                right: -10,
+                bottom: -12,
+                child: Transform.rotate(
+                  angle: -0.35,
+                  child: const _PokeballWatermark(
+                    size: 116,
+                    color: Color(0xFFFFFFFF),
+                    opacity: 0.35,
                   ),
                 ),
               ),
-              Text(
-                '#${widget.pokemon.id.toString().padLeft(3, '0')}',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: AnimatedBuilder(
-                  animation: _hoverAnim,
-                  builder: (context, child) => Text(
-                    prettyName(widget.pokemon.name),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.lerp(
-                        FontWeight.w500,
-                        FontWeight.w700,
-                        _hoverAnim.value,
+                padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            prettyName(widget.pokemon.name),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '#${widget.pokemon.id.toString().padLeft(3, '0')}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Badges de tipo (o placeholder mientras carga el mapa).
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (types.isEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    '···',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                              else
+                                for (final t in types)
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 4),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.25),
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        typeNameEs(t),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                          const SizedBox(width: 6),
+                          // Sprite sobre el círculo.
+                          Expanded(
+                            child: AnimatedBuilder(
+                              animation: _hoverAnim,
+                              builder: (context, child) => Transform.scale(
+                                scale: 1.0 + 0.12 * _hoverAnim.value,
+                                child: child,
+                              ),
+                              child: Image.network(
+                                widget.pokemon.imageUrl,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (c, child, prog) =>
+                                    prog == null
+                                        ? child
+                                        : const Center(
+                                            child:
+                                                CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white)),
+                                errorBuilder: (c, e, s) => const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -331,4 +407,73 @@ class _PokemonCardState extends State<_PokemonCard>
       ),
     );
   }
+}
+
+/// Marca de agua con forma de Pokébola (igual a la imagen 2 de referencia).
+/// Aro exterior delgado + banda horizontal + botón interno con centro,
+/// en blanco semitransparente que sobre el color del tipo se ve gris claro.
+class _PokeballWatermark extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _PokeballWatermark({
+    required this.size,
+    required this.color,
+    this.opacity = 0.35,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _PokeballPainter(color.withValues(alpha: opacity)),
+      ),
+    );
+  }
+}
+
+class _PokeballPainter extends CustomPainter {
+  final Color color;
+  const _PokeballPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = size.width / 2;
+
+    // Aro exterior GRUESO como la referencia (imagen 1).
+    final ring = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = r * 0.24;
+
+    canvas.drawCircle(c, r * 0.78, ring);
+
+    // Banda horizontal central gruesa.
+    final band = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromCenter(center: c, width: r * 1.56, height: r * 0.20),
+      band,
+    );
+
+    // Botón interno: aro grueso + punto central grande.
+    final innerRing = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = r * 0.14;
+    canvas.drawCircle(c, r * 0.24, innerRing);
+
+    final dot = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(c, r * 0.12, dot);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PokeballPainter old) => old.color != color;
 }

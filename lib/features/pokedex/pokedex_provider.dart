@@ -29,6 +29,35 @@ class PokedexProvider extends ChangeNotifier {
   Timer? _debounce;
   int _pendingFilters = 0;
 
+  /// Mapa id -> tipos (para pintar cada tarjeta con el color de su tipo,
+  /// estilo DIO/Wellington). Se carga en segundo plano tras [load].
+  final Map<int, List<String>> _typesById = {};
+  bool typesReady = false;
+
+  static const List<String> _allTypes = [
+    'normal',
+    'fire',
+    'water',
+    'electric',
+    'grass',
+    'ice',
+    'fighting',
+    'poison',
+    'ground',
+    'flying',
+    'psychic',
+    'bug',
+    'rock',
+    'ghost',
+    'dragon',
+    'dark',
+    'steel',
+    'fairy',
+  ];
+
+  /// Tipos conocidos para un id (vacío si aún no se cargó el mapa).
+  List<String> typesFor(int id) => _typesById[id] ?? const [];
+
   bool get hasData => _all.isNotEmpty;
   bool get filtering => _pendingFilters > 0;
   bool get hasActiveFilters =>
@@ -58,12 +87,37 @@ class PokedexProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _all = await _api.fetchAllPokemon();
+      // Mapa de tipos en segundo plano (no bloquea la lista).
+      // ignore: unawaited_futures
+      _loadTypeMap();
     } catch (_) {
       error = 'No se pudo cargar la Pokédex. Revisa tu conexión.';
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  /// Construye id -> tipos consultando los 18 tipos una vez.
+  /// Usa el caché disco-primero de PokeApiService, así solo va a red
+  /// la primera vez. Si falla, las tarjetas quedan en gris (fallback).
+  Future<void> _loadTypeMap() async {
+    if (_all.isEmpty || typesReady) return;
+    try {
+      final entries = await Future.wait(
+        _allTypes.map((t) async => MapEntry(t, await _api.fetchIdsByType(t))),
+      );
+      _typesById.clear();
+      for (final e in entries) {
+        for (final id in e.value) {
+          (_typesById[id] ??= []).add(e.key);
+        }
+      }
+      typesReady = true;
+    } catch (_) {
+      // Fallback gris: no bloquea la Pokédex.
+    }
+    notifyListeners();
   }
 
   /// Se llama en cada tecla; espera 400 ms sin escribir antes de filtrar
