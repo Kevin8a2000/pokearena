@@ -5,6 +5,7 @@ import '../../core/models/evolution.dart';
 import '../../core/models/pokemon.dart';
 import '../../core/services/pokeapi_service.dart';
 import '../../core/theme/type_colors.dart';
+import '../profile/favorites_provider.dart';
 import '../team/team_provider.dart';
 
 const _statNamesEs = {
@@ -45,7 +46,33 @@ class _PokemonDetailPageState extends State<PokemonDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle')),
+      appBar: AppBar(
+        title: const Text('Detalle'),
+        actions: [
+          Consumer<FavoritesProvider>(
+            builder: (context, favProvider, _) {
+              final isFav = favProvider.isFavorite(widget.id);
+              return IconButton(
+                tooltip: isFav ? 'Quitar de favoritos' : 'Agregar a favoritos',
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.redAccent : null,
+                ),
+                onPressed: () {
+                  _detail.then((d) {
+                    favProvider.toggleFavorite(id: d.id, name: d.name);
+                  }).catchError((_) {
+                    favProvider.toggleFavorite(
+                      id: widget.id,
+                      name: 'Pokémon #${widget.id}',
+                    );
+                  });
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<PokemonDetail>(
         future: _detail,
         builder: (context, snap) {
@@ -72,10 +99,7 @@ class _PokemonDetailPageState extends State<PokemonDetailPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              SizedBox(
-                height: 220,
-                child: Image.network(d.imageUrl, fit: BoxFit.contain),
-              ),
+              _AnimatedPokemonArtwork(imageUrl: d.imageUrl),
               const SizedBox(height: 8),
               Center(
                 child: Text(
@@ -286,45 +310,133 @@ class _EvolutionTree extends StatelessWidget {
   }
 }
 
-class _EvolutionCard extends StatelessWidget {
+/// Arte oficial interactivo con microanimación de escala al pasar el cursor (hover).
+class _AnimatedPokemonArtwork extends StatefulWidget {
+  final String imageUrl;
+  const _AnimatedPokemonArtwork({required this.imageUrl});
+
+  @override
+  State<_AnimatedPokemonArtwork> createState() =>
+      _AnimatedPokemonArtworkState();
+}
+
+class _AnimatedPokemonArtworkState extends State<_AnimatedPokemonArtwork> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Center(
+        child: SizedBox(
+          height: 220,
+          child: AnimatedScale(
+            scale: _isHovered ? 1.08 : 1.0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutBack,
+            child: Image.network(
+              widget.imageUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, size: 80),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EvolutionCard extends StatefulWidget {
   final EvolutionNode node;
   final bool isCurrent;
   const _EvolutionCard({required this.node, required this.isCurrent});
 
   @override
+  State<_EvolutionCard> createState() => _EvolutionCardState();
+}
+
+class _EvolutionCardState extends State<_EvolutionCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      // Tocar la etapa actual no hace nada; las demás abren su propio detalle.
-      onTap: isCurrent
-          ? null
-          : () => Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => PokemonDetailPage(id: node.id)),
-              ),
-      child: Container(
+    final isInteractive = !widget.isCurrent;
+
+    return MouseRegion(
+      cursor: isInteractive
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (isInteractive) setState(() => _isHovered = true);
+      },
+      onExit: (_) {
+        if (isInteractive) setState(() => _isHovered = false);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        transform: _isHovered
+            ? Matrix4.translationValues(0.0, -4.0, 0.0)
+            : Matrix4.identity(),
         width: 110,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isCurrent
+          color: widget.isCurrent
               ? scheme.primaryContainer
-              : scheme.surfaceContainerHighest,
+              : (_isHovered
+                  ? scheme.primaryContainer.withValues(alpha: 0.3)
+                  : scheme.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(12),
+          border: _isHovered
+              ? Border.all(
+                  color: scheme.primary.withValues(alpha: 0.6),
+                  width: 1.5,
+                )
+              : null,
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
-        child: Column(
-          children: [
-            Image.network(
-              officialArtwork(node.id),
-              height: 80,
-              fit: BoxFit.contain,
-              errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
-            ),
-            const SizedBox(height: 4),
-            Text(prettyName(node.name),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          // Tocar la etapa actual no hace nada; las demás abren su propio detalle.
+          onTap: widget.isCurrent
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PokemonDetailPage(id: widget.node.id),
+                    ),
+                  ),
+          child: Column(
+            children: [
+              AnimatedScale(
+                scale: _isHovered ? 1.12 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: Image.network(
+                  officialArtwork(widget.node.id),
+                  height: 80,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                prettyName(widget.node.name),
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge),
-          ],
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ],
+          ),
         ),
       ),
     );

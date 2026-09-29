@@ -113,6 +113,77 @@ Completar el módulo Pokédex: búsqueda, filtros por tipo y generación, detall
 
 ---
 
+## Sprint 2 — Equipo y Perfil
+**Duración planeada:** 6–12 oct 2026
+**Estado:** En curso — rama `feature/equipo` (commit `f077356`, con cambios aún sin commitear)
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/equipo`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Completar los módulos Equipo y Perfil: equipo de hasta 6 Pokémon con persistencia y análisis de cobertura defensiva, favoritos con persistencia, selector de tema claro/oscuro/sistema, e historial de puntajes como base para el Quiz del Sprint 3.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| E1 | Como usuario, quiero agregar Pokémon a mi equipo hasta 6 para armar mi formación. | ✅ Hecho |
+| E2 | Como usuario, quiero que no se dupliquen Pokémon en mi equipo. | ✅ Hecho |
+| E3 | Como usuario, quiero quitar o vaciar mi equipo (con confirmación). | ✅ Hecho |
+| E4 | Como usuario, quiero ver la cobertura defensiva combinada ante los 18 tipos (x4, x2, x1, x0.5, x0.25, x0). | ✅ Hecho |
+| E5 | Como usuario, quiero ver el desglose por tipo (débiles, resistentes, inmunes) con leyenda de colores. | ✅ Hecho |
+| E6 | Como usuario, quiero que mi equipo se guarde y se recupere al reiniciar la app. | ✅ Hecho |
+| E7 | Como equipo, queremos pruebas automáticas del cálculo de cobertura. | ✅ Hecho (6 pruebas) |
+| F1 | Como usuario, quiero marcar/desmarcar favoritos desde el detalle (corazón). | ✅ Hecho (provider + botón en detalle) |
+| F2 | Como usuario, quiero que mis favoritos persistan al reiniciar. | ✅ Hecho |
+| F3 | Como usuario, quiero ver mis favoritos en el Perfil y navegar al detalle o quitarlos. | ✅ Hecho |
+| F4 | Como usuario, quiero cambiar entre tema Claro / Oscuro / Sistema y que se recuerde. | ✅ Hecho |
+| F5 | Como equipo, queremos un historial de puntajes listo para el Quiz (guardar, listar, filtrar, limpiar). | ✅ Hecho (5 pruebas) |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Equipo 0/6 a 6/6 con grilla de slots, estado vacío con guía ("Ve a Pokédex → detalle → Agregar al equipo"), quitar individual y "Vaciar equipo" con diálogo de confirmación.
+- Cobertura defensiva en tiempo real: grilla de 18 tipos con píldora de color, multiplicador (`x4`, `x2`, `x1`, `x0.5`, `x0`) y badge (`Muy Débil`, `Débil`, `Resiste`, `Inmune`, `Neutro`) + leyenda. Hover con elevación/glow en web.
+- Perfil: tarjeta "Entrenador PokéArena" con contadores (`N Favs`, `N/6 Equipo`), `SegmentedButton` de tema, grilla de favoritos con hover/animación y navegación al detalle, e historial de puntajes (vacío: "Aún no hay partidas jugadas en el Quiz").
+- Persistencia con `SharedPreferences`: `pokearena_team_ids`, `pokearena_favorite_ids`, `pokearena_theme_mode`, `pokearena_score_history`.
+- `flutter test`: **29/29 en verde** (13 previas + 16 nuevas: 6 cobertura + 5 perfil/favoritos/tema + 5 historial).
+
+### 4. Decisiones técnicas y su justificación
+
+*(Para poder explicarlas si el profesor pregunta)*
+
+1. **Cálculo puro separado en `TeamCoverageCalculator`.** `TeamProvider` solo orquesta estado/red/persistencia; la matemática (`calculateCombinedMultipliers`, `calculateDetailedCoverage`, `calculatePokemonMultiplier`) es estática y testeable sin Flutter ni red. Regla: dual defensivo multiplica (ej. Agua/Tierra ante Planta `2.0*2.0=4.0`); equipo multiplica miembros (ej. dos Fuego ante Agua `2.0*2.0=4.0`); inmunidad `x0` anula el producto.
+2. **`SharedPreferences` directo para datos de usuario, `LocalCache` solo para caché HTTP.** El equipo/favoritos/tema/historial son estado persistente con claves propias (`pokearena_team_ids`, etc.), mientras `LocalCache` usa prefijo `pokearena_cache_` para respuestas de PokeAPI. Documentado en `team_provider.dart:132-136`.
+3. **Relaciones de tipo con caché en memoria + `Future.wait` en paralelo.** Se extraen los tipos únicos del equipo, se consulta `/type/{name}` solo si falta en `_relationsCache` y en paralelo. Si falla la red, se conserva el último cálculo.
+4. **Favoritos resueltos vía lista completa cacheada.** `loadFavorites` lee ids y resuelve nombres con `fetchAllPokemon()` (ya cacheado disco-primero); sin red cae a `Pokémon #id` para no bloquear la UI.
+5. **Tema global con `Consumer<ThemeProvider>` en `main.dart`.** `MaterialApp.theme/darkTheme` fijos con `seedColor: redAccent` y `themeMode` reactivo; carga inicial con `loadSavedTheme()`.
+6. **Historial como servicio inyectable (`ScoreHistoryService([prefs])`).** Guarda JSON ordenado reciente-primero, con filtro por `gameName`, pensado para el Quiz del Sprint 3 sin acoplarlo a UI.
+
+### 5. Pendiente / conocido
+
+- Rama `feature/equipo` aún sin merge a `main`: hay 5 archivos modificados sin commitear (`pokedex_page`, `pokemon_detail_page`, `profile_page`, `team_page`, `main.dart`) + 5 nuevos sin trackear (`score_entry.dart`, `score_history_service.dart`, `favorites_provider.dart`, `theme_provider.dart`, tests de perfil/historial). Falta commit + PR + merge.
+- Batalla y Quiz siguen en placeholder ("Módulo en construcción (Sprint 3)").
+- Falta captura de evidencia: 2-3 pantallas (Equipo, Perfil, cobertura) en `docs/capturas/` y captura de `flutter test` en verde.
+- Validar en APK Android (el hover/glow es solo web/desktop) y prueba formal sin conexión del equipo/favoritos guardados.
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Separar cálculo puro de provider permitió 6 pruebas de cobertura sin mocks de red. | Se acumuló mucho cambio sin commitear en `feature/equipo` (1237 inserciones). | Commitear por módulo (Equipo / Perfil / Historial) y no dejar todo al cierre. |
+| Reutilizar caché disco-primero de PokeAPI aceleró favoritos y cobertura. | Faltó definir backlog con IDs E1-E7/F1-F5 antes de codificar (se infirieron del código/tests). | Crear `Backlog_Scrum_PokeArena.md` antes del Sprint 3. |
+| Servicio de historial desacoplado deja el Quiz desbloqueado. | Sin capturas ni PR aún, la evidencia de sustentación está incompleta. | Al cerrar Sprint 2: capturas + `flutter test` + PR a `main`. |
+
+### 7. Evidencia para la sustentación
+
+- Commit `f077356 feat(team): implementacion del modulo de equipo y calculo de cobertura de tipos (E1-E7)` + cambios pendientes en `feature/equipo` (`git diff --stat`: 5 modificados, 5 nuevos).
+- `flutter test`: `All tests passed!` — 29 pruebas (ver `test/team_coverage_test.dart`, `test/profile_providers_test.dart`, `test/score_history_test.dart`).
+- Capturas pendientes: equipo vacío/lleno, cobertura defensiva, perfil con favoritos y selector de tema.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:

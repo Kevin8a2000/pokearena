@@ -25,7 +25,7 @@ class _PokedexPageState extends State<PokedexPage> {
   }
 
   void _clearAll() {
-    _search.clear(); // limpia el texto y luego el estado del provider
+    _search.clear();
     context.read<PokedexProvider>().clearFilters();
   }
 
@@ -176,54 +176,157 @@ class _FilterRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         itemCount: chips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (_, i) => chips[i],
       ),
     );
   }
 }
 
-class _PokemonCard extends StatelessWidget {
+/// Tarjeta de Pokémon con animaciones hover premium:
+/// - Elevación + traslación vertical suave
+/// - Escala del sprite con curva easeOutBack
+/// - Glow del color del tipo en el borde
+/// - Fondo degradado sutil del color del tipo al hacer hover
+class _PokemonCard extends StatefulWidget {
   final PokemonSummary pokemon;
   const _PokemonCard({super.key, required this.pokemon});
 
   @override
+  State<_PokemonCard> createState() => _PokemonCardState();
+}
+
+class _PokemonCardState extends State<_PokemonCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _hoverAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _hoverAnim = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onEnter(_) => _controller.forward();
+
+  void _onExit(_) => _controller.reverse();
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PokemonDetailPage(id: pokemon.id)),
-      ),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+    // Usa el color primario del tema para el glow en la lista
+    // (PokemonSummary no incluye tipos; el tipo real se carga en PokemonDetailPage)
+    final glowColor = Theme.of(context).colorScheme.primary;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: _onEnter,
+      onExit: _onExit,
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PokemonDetailPage(id: widget.pokemon.id),
+          ),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Image.network(
-                  pokemon.imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (c, child, prog) => prog == null
-                      ? child
-                      : const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                  errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+        child: AnimatedBuilder(
+          animation: _hoverAnim,
+          builder: (context, child) {
+            final t = _hoverAnim.value;
+            return Transform.translate(
+              offset: Offset(0, -6 * t),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color.lerp(
+                    scheme.surfaceContainerHighest,
+                    glowColor.withValues(alpha: 0.14),
+                    t,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Color.lerp(
+                      scheme.outlineVariant.withValues(alpha: 0.0),
+                      glowColor.withValues(alpha: 0.65),
+                      t,
+                    )!,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: glowColor.withValues(alpha: 0.22 * t),
+                      blurRadius: 16 * t,
+                      spreadRadius: 2 * t,
+                      offset: Offset(0, 6 * t),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06 + 0.08 * t),
+                      blurRadius: 4 + 8 * t,
+                      offset: Offset(0, 2 + 4 * t),
+                    ),
+                  ],
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: AnimatedBuilder(
+                    animation: _hoverAnim,
+                    builder: (context, child) => Transform.scale(
+                      scale: 1.0 + 0.12 * _hoverAnim.value,
+                      child: child,
+                    ),
+                    child: Image.network(
+                      widget.pokemon.imageUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (c, child, prog) => prog == null
+                          ? child
+                          : const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            Text('#${pokemon.id.toString().padLeft(3, '0')}',
-                style: Theme.of(context).textTheme.labelSmall),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Text(prettyName(pokemon.name),
-                  style: Theme.of(context).textTheme.titleMedium),
-            ),
-          ],
+              Text(
+                '#${widget.pokemon.id.toString().padLeft(3, '0')}',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AnimatedBuilder(
+                  animation: _hoverAnim,
+                  builder: (context, child) => Text(
+                    prettyName(widget.pokemon.name),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.lerp(
+                        FontWeight.w500,
+                        FontWeight.w700,
+                        _hoverAnim.value,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
