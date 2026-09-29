@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/services/pokeapi_service.dart';
 import 'features/home/home_shell.dart';
 import 'features/pokedex/pokedex_provider.dart';
+import 'features/team/team_provider.dart';
 
 void main() {
   runApp(const PokeArenaApp());
@@ -21,6 +22,10 @@ class PokeArenaApp extends StatelessWidget {
         // Cada módulo registra aquí su propio provider (equipo, batalla, quiz, perfil).
         ChangeNotifierProvider<PokedexProvider>(
           create: (ctx) => PokedexProvider(ctx.read<PokeApiService>())..load(),
+        ),
+        ChangeNotifierProvider<TeamProvider>(
+          create: (ctx) =>
+              TeamProvider(ctx.read<PokeApiService>())..loadSavedTeam(),
         ),
       ],
       child: MaterialApp(

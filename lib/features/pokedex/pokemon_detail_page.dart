@@ -5,6 +5,7 @@ import '../../core/models/evolution.dart';
 import '../../core/models/pokemon.dart';
 import '../../core/services/pokeapi_service.dart';
 import '../../core/theme/type_colors.dart';
+import '../team/team_provider.dart';
 
 const _statNamesEs = {
   'hp': 'PS',
@@ -99,6 +100,54 @@ class _PokemonDetailPageState extends State<PokemonDetailPage> {
               Center(
                 child: Text(
                     'Altura: ${d.height / 10} m   •   Peso: ${d.weight / 10} kg'),
+              ),
+              const SizedBox(height: 16),
+              // Botón de gestión del equipo (Requisito E2)
+              Consumer<TeamProvider>(
+                builder: (context, teamProvider, _) {
+                  final inTeam = teamProvider.isInTeam(d.id);
+                  if (inTeam) {
+                    return Center(
+                      child: FilledButton.tonalIcon(
+                        onPressed: () => teamProvider.removePokemon(d.id),
+                        icon: const Icon(Icons.remove_circle_outline),
+                        label: const Text('Quitar del equipo'),
+                        style: FilledButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    );
+                  }
+                  return Center(
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        if (teamProvider.isFull) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('El equipo ya tiene 6 Pokémon (máximo alcanzado)'),
+                            ),
+                          );
+                          return;
+                        }
+                        final added = await teamProvider.addPokemon(d);
+                        if (context.mounted && added) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${prettyName(d.name)} agregado al equipo (${teamProvider.count}/6)'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.group_add_outlined),
+                      label: Text(
+                        teamProvider.isFull
+                            ? 'Equipo completo (6/6)'
+                            : 'Agregar al equipo (${teamProvider.count}/6)',
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
               Text('Habilidades', style: textTheme.titleMedium),

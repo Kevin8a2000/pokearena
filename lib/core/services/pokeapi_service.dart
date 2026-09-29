@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/evolution.dart';
 import '../models/pokemon.dart';
+import '../models/type_relations.dart';
 import 'local_cache.dart';
 
 /// Único punto de acceso a PokeAPI. Todos los módulos deben usar esta clase
@@ -127,6 +128,14 @@ class PokeApiService {
     return EvolutionNode.fromJson(json);
   }
 
-  // Los siguientes métodos los completan los dueños de cada módulo:
-  // Future<TypeRelations> fetchTypeRelations(String type)   -> módulo Equipo
+  /// Relaciones de daño de un tipo elemental (/type/{name}).
+  /// Se guarda en caché local para evitar consultas repetitivas de tipos fijos.
+  Future<TypeRelations> fetchTypeRelations(String type) async {
+    final lower = type.toLowerCase();
+    final json = (await _cachedOrFetch('type-relations-$lower', () async {
+      final data = await _getJson('/type/$lower') as Map<String, dynamic>;
+      return TypeRelations.fromApiJson(lower, data).toCacheJson();
+    })) as Map<String, dynamic>;
+    return TypeRelations.fromCacheJson(json);
+  }
 }
