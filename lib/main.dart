@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/services/pokeapi_service.dart';
 import 'core/services/score_history_service.dart';
 import 'features/home/home_shell.dart';
+import 'features/battle/battle_provider.dart';
 import 'features/pokedex/pokedex_provider.dart';
 import 'features/profile/favorites_provider.dart';
 import 'features/profile/theme_provider.dart';
@@ -43,6 +44,9 @@ class PokeArenaApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<QuizProvider>(
           create: (ctx) => QuizProvider(ctx.read<PokeApiService>())..load(),
+        ),
+        ChangeNotifierProvider<BattleProvider>(
+          create: (ctx) => BattleProvider(ctx.read<PokeApiService>()),
         ),
       ],
       child: Consumer<ThemeProvider>(
