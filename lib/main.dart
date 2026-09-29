@@ -7,6 +7,7 @@ import 'features/home/home_shell.dart';
 import 'features/pokedex/pokedex_provider.dart';
 import 'features/profile/favorites_provider.dart';
 import 'features/profile/theme_provider.dart';
+import 'features/quiz/quiz_provider.dart';
 import 'features/team/team_provider.dart';
 
 void main() {
@@ -39,6 +40,9 @@ class PokeArenaApp extends StatelessWidget {
         ChangeNotifierProvider<FavoritesProvider>(
           create: (ctx) =>
               FavoritesProvider(ctx.read<PokeApiService>())..loadFavorites(),
+        ),
+        ChangeNotifierProvider<QuizProvider>(
+          create: (ctx) => QuizProvider(ctx.read<PokeApiService>())..load(),
         ),
       ],
       child: Consumer<ThemeProvider>(
