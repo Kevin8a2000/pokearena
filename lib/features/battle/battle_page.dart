@@ -93,25 +93,20 @@ class _SelectViewState extends State<_SelectView> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             if (team.isNotEmpty)
-              SizedBox(
-                height: 150,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: team.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (context, i) {
-                    final p = team[i];
-                    final sel = b.player?.id == p.id;
-                    return ChoiceChip(
-                      selected: sel,
-                      showCheckmark: false,
-                      avatar: Image.network(p.imageUrl, width: 48),
-                      label: Text(prettyName(p.name)),
-                      onSelected: (_) => b.selectPlayer(p),
-                    );
-                  },
-                ),
+              // Wrap en vez de lista horizontal: los 6 siempre visibles,
+              // sin scroll lateral (en web la rueda no mueve el scroll
+              // horizontal y el 6º quedaba inalcanzable).
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final p in team)
+                    _FighterPick(
+                      pokemon: p,
+                      selected: b.player?.id == p.id,
+                      onTap: () => b.selectPlayer(p),
+                    ),
+                ],
               )
             else
               Wrap(
@@ -132,43 +127,207 @@ class _SelectViewState extends State<_SelectView> {
             const Text('Rival salvaje',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    if (b.loadingEnemy)
-                      const CircularProgressIndicator()
-                    else if (b.enemy != null)
-                      Image.network(b.enemy!.imageUrl, width: 72, height: 72)
-                    else
-                      const Icon(Icons.question_mark, size: 48),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        b.enemy == null
-                            ? 'Sin rival'
-                            : '#${b.enemy!.id.toString().padLeft(3, '0')} ${prettyName(b.enemy!.name)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+            _HoverBox(
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      if (b.loadingEnemy)
+                        const CircularProgressIndicator()
+                      else if (b.enemy != null)
+                        Image.network(b.enemy!.imageUrl, width: 72, height: 72)
+                      else
+                        const Icon(Icons.question_mark, size: 48),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          b.enemy == null
+                              ? 'Sin rival'
+                              : '#${b.enemy!.id.toString().padLeft(3, '0')} ${prettyName(b.enemy!.name)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Otro rival',
-                      onPressed: b.loadingEnemy ? null : b.rollEnemy,
-                      icon: const Icon(Icons.refresh),
-                    ),
-                  ],
+                      IconButton(
+                        tooltip: 'Otro rival',
+                        onPressed: b.loadingEnemy ? null : b.rollEnemy,
+                        icon: const Icon(Icons.refresh),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: b.canStart ? b.startBattle : null,
-              icon: const Icon(Icons.sports_mma),
-              label: const Text('¡A pelear!'),
+            _HoverScale(
+              child: FilledButton.icon(
+                onPressed: b.canStart ? b.startBattle : null,
+                icon: const Icon(Icons.sports_mma),
+                label: const Text('¡A pelear!'),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Tarjeta de luchador con hover tipo CSS: se eleva, crece y brilla al
+/// pasar el cursor; el seleccionado queda marcado con el color primario.
+class _FighterPick extends StatefulWidget {
+  final PokemonDetail pokemon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FighterPick({
+    required this.pokemon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_FighterPick> createState() => _FighterPickState();
+}
+
+class _FighterPickState extends State<_FighterPick> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = widget.selected || _hover;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.translationValues(0, _hover ? -5 : 0, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: widget.selected
+                ? scheme.primaryContainer
+                : scheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: widget.selected
+                  ? scheme.primary
+                  : _hover
+                      ? scheme.primary.withValues(alpha: 0.6)
+                      : scheme.outlineVariant,
+              width: active ? 1.6 : 1,
+            ),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: scheme.primary.withValues(alpha: 0.30),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: _hover ? 1.18 : 1.0,
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutBack,
+                child: Image.network(
+                  widget.pokemon.imageUrl,
+                  width: 44,
+                  height: 44,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                prettyName(widget.pokemon.name),
+                style: TextStyle(
+                  fontWeight:
+                      widget.selected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              if (widget.selected) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.check_circle,
+                    size: 18, color: scheme.primary),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Eleva cualquier tarjeta al pasar el cursor (sin tap).
+class _HoverBox extends StatefulWidget {
+  final Widget child;
+  const _HoverBox({required this.child});
+
+  @override
+  State<_HoverBox> createState() => _HoverBoxState();
+}
+
+class _HoverBoxState extends State<_HoverBox> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: _hover
+              ? [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.22),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [],
+        ),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Escala suave al pasar el cursor (para botones).
+class _HoverScale extends StatefulWidget {
+  final Widget child;
+  const _HoverScale({required this.child});
+
+  @override
+  State<_HoverScale> createState() => _HoverScaleState();
+}
+
+class _HoverScaleState extends State<_HoverScale> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedScale(
+        scale: _hover ? 1.03 : 1.0,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
       ),
     );
   }
