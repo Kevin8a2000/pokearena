@@ -177,9 +177,9 @@ Completar los módulos Equipo y Perfil: equipo de hasta 6 Pokémon con persisten
 
 ### 7. Evidencia para la sustentación
 
-- Commit `f077356 feat(team): implementacion del modulo de equipo y calculo de cobertura de tipos (E1-E7)` + cambios pendientes en `feature/equipo` (`git diff --stat`: 5 modificados, 5 nuevos).
+- Commit `f077356 feat(team)` + `d6c329d Sprint 2` + `3c8add5 fix(pokedex tarjeta referencia)` + merge `f89754e` a `main`.
 - `flutter test`: `All tests passed!` — 29 pruebas (ver `test/team_coverage_test.dart`, `test/profile_providers_test.dart`, `test/score_history_test.dart`).
-- Capturas pendientes: equipo vacío/lleno, cobertura defensiva, perfil con favoritos y selector de tema.
+- Capturas Sprint 2 en `docs/capturas/`: `sprint2-pokedex.png` (tarjeta con marca de agua gruesa), `sprint2-equipo.png` (equipo 6/6 + cobertura defensiva), `sprint2-perfil.png` (favoritos + tema + historial vacío).
 - Este documento como acta de Sprint Review + Retrospectiva.
 
 ---
