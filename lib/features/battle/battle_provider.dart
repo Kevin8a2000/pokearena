@@ -35,6 +35,14 @@ class BattleProvider extends ChangeNotifier {
   final List<String> log = [];
   final Map<String, TypeRelations> _relations = {};
 
+  // Para animaciones de la UI: quién atacó último, cuánto pegó,
+  // con qué efectividad, si fue crítico y un contador que cambia cada golpe.
+  String lastAttacker = '';
+  int lastDamage = 0;
+  double lastEffectiveness = 1.0;
+  bool lastCrit = false;
+  int attackSeq = 0;
+
   Future<TypeRelations> _rel(String type) async {
     final lower = type.toLowerCase();
     if (_relations.containsKey(lower)) return _relations[lower]!;
@@ -81,6 +89,11 @@ class BattleProvider extends ChangeNotifier {
     await _ensureRelations([...player!.types, ...enemy!.types]);
     phase = BattlePhase.fighting;
     winner = null;
+    lastAttacker = '';
+    lastDamage = 0;
+    lastEffectiveness = 1.0;
+    lastCrit = false;
+    attackSeq = 0;
     log
       ..clear()
       ..add('¡${prettyName(player!.name)} vs ${prettyName(enemy!.name)} salvaje!');
@@ -98,21 +111,29 @@ class BattleProvider extends ChangeNotifier {
     busy = true;
     notifyListeners();
 
-    final dmg = calculateDamage(
+    final dmgBase = calculateDamage(
       attacker: player!,
       defender: enemy!,
       move: move,
       relations: _relations,
       randomFactor: 0.85 + _random.nextDouble() * 0.15,
     );
+    // 10% de golpe crítico x1.5 para emoción.
+    final crit = _random.nextDouble() < 0.10;
+    final dmg = crit ? (dmgBase * 1.5).floor() : dmgBase;
     enemyHp = (enemyHp - dmg).clamp(0, enemyMaxHp);
     final eff = effectivenessFor(
       attackType: move.type,
       defenderTypes: enemy!.types,
       relations: _relations,
     );
+    lastAttacker = 'player';
+    lastDamage = dmg;
+    lastEffectiveness = eff;
+    lastCrit = crit;
+    attackSeq++;
     log.add(
-      '${prettyName(player!.name)} usa ${move.name} (-$dmg). ${effectivenessText(eff)}',
+      '${prettyName(player!.name)} usa ${move.name} (-$dmg).${crit ? ' ¡Golpe crítico!' : ''} ${effectivenessText(eff)}',
     );
     notifyListeners();
 
@@ -133,21 +154,28 @@ class BattleProvider extends ChangeNotifier {
   Future<void> enemyTurn() async {
     if (winner != null) return;
     final move = enemyMoves[_random.nextInt(enemyMoves.length)];
-    final dmg = calculateDamage(
+    final dmgBase = calculateDamage(
       attacker: enemy!,
       defender: player!,
       move: move,
       relations: _relations,
       randomFactor: 0.85 + _random.nextDouble() * 0.15,
     );
+    final crit = _random.nextDouble() < 0.10;
+    final dmg = crit ? (dmgBase * 1.5).floor() : dmgBase;
     playerHp = (playerHp - dmg).clamp(0, playerMaxHp);
     final eff = effectivenessFor(
       attackType: move.type,
       defenderTypes: player!.types,
       relations: _relations,
     );
+    lastAttacker = 'enemy';
+    lastDamage = dmg;
+    lastEffectiveness = eff;
+    lastCrit = crit;
+    attackSeq++;
     log.add(
-      '${prettyName(enemy!.name)} usa ${move.name} (-$dmg). ${effectivenessText(eff)}',
+      '${prettyName(enemy!.name)} usa ${move.name} (-$dmg).${crit ? ' ¡Golpe crítico!' : ''} ${effectivenessText(eff)}',
     );
     if (playerHp <= 0) {
       winner = 'enemy';
