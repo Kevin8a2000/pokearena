@@ -179,7 +179,10 @@ Completar los módulos Equipo y Perfil: equipo de hasta 6 Pokémon con persisten
 
 - Commit `f077356 feat(team)` + `d6c329d Sprint 2` + `3c8add5 fix(pokedex tarjeta referencia)` + merge `f89754e` a `main`.
 - `flutter test`: `All tests passed!` — 29 pruebas (ver `test/team_coverage_test.dart`, `test/profile_providers_test.dart`, `test/score_history_test.dart`).
-- Capturas Sprint 2 en `docs/capturas/`: `sprint2-pokedex.png` (tarjeta con marca de agua gruesa), `sprint2-equipo.png` (equipo 6/6 + cobertura defensiva), `sprint2-perfil.png` (favoritos + tema + historial vacío).
+- Capturas Sprint 2 en `docs/capturas/`:
+  - Pokédex con tarjeta referencia: ![Pokedex Sprint 2](capturas/sprint2-pokedex.png)
+  - Equipo 6/6 + cobertura defensiva: ![Equipo Sprint 2](capturas/sprint2-equipo.png)
+  - Perfil con favoritos + tema + historial: ![Perfil Sprint 2](capturas/sprint2-perfil.png)
 - Este documento como acta de Sprint Review + Retrospectiva.
 
 ---
