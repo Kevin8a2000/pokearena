@@ -463,8 +463,9 @@ class _FightViewState extends State<_FightView>
                     (b.attackSeq > 0 && defenderIsPlayer) ? _shake(a) : 0.0;
                 final enemyShake =
                     (b.attackSeq > 0 && attackerIsPlayer) ? _shake(a) : 0.0;
-                final flash = (b.attackSeq > 0 && a < 0.55)
-                    ? (0.55 - a) / 0.55
+                // El golpe impacta a mitad del vuelo del proyectil.
+                final flash = (b.attackSeq > 0 && a > 0.45 && a < 0.9)
+                    ? 1 - (a - 0.45) / 0.45
                     : 0.0;
                 // Screen-shake en súper-efectivo.
                 final bigHit =
@@ -530,11 +531,24 @@ class _FightViewState extends State<_FightView>
                                 ),
                               ],
                             ),
-                            // Pancarta de impacto.
+                            // Nombre del poder usado + pancarta de impacto.
                             SizedBox(
-                              height: 34,
+                              height: 52,
                               child: Center(
-                                child: _impactBanner(b, a),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (b.attackSeq > 0 && a < 0.9)
+                                      Text(
+                                        '¡${attackerIsPlayer ? prettyName(b.player!.name) : prettyName(b.enemy!.name)} usa ${b.lastMoveName}!',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    _impactBanner(b, a),
+                                  ],
+                                ),
                               ),
                             ),
                             // Jugador abajo-derecha.
@@ -561,14 +575,15 @@ class _FightViewState extends State<_FightView>
                                       fainted: playerFainted,
                                       size: 104,
                                     ),
-                                    // Número de daño flotante sobre el que recibe.
-                                    if (b.attackSeq > 0 && a < 0.85)
+                                    // Número de daño flotante (sale al impactar).
+                                    if (b.attackSeq > 0 && a > 0.45)
                                       Positioned(
-                                        top: -6 - a * 34,
+                                        top: -6 - (a - 0.45) * 60,
                                         left: 0,
                                         right: 0,
                                         child: Opacity(
-                                          opacity: (0.85 - a) / 0.85,
+                                          opacity: ((1.0 - a) / 0.55)
+                                              .clamp(0.0, 1.0),
                                           child: Text(
                                             '-${b.lastDamage}',
                                             textAlign: TextAlign.center,
@@ -594,6 +609,50 @@ class _FightViewState extends State<_FightView>
                             ),
                           ],
                         ),
+                        // Proyectil del poder volando atacante → defensor.
+                        if (b.attackSeq > 0 && a <= 0.55)
+                          Positioned.fill(
+                            child: Align(
+                              alignment: Alignment.lerp(
+                                attackerIsPlayer
+                                    ? const Alignment(0.75, 0.75)
+                                    : const Alignment(-0.75, -0.75),
+                                attackerIsPlayer
+                                    ? const Alignment(-0.75, -0.75)
+                                    : const Alignment(0.75, 0.75),
+                                (a / 0.55).clamp(0.0, 1.0),
+                              )!,
+                              child: _projectile(
+                                  colorForType(b.lastMoveType)),
+                            ),
+                          ),
+                        // Estallido en el impacto.
+                        if (b.attackSeq > 0 && a > 0.5 && a < 0.9)
+                          Positioned.fill(
+                            child: Align(
+                              alignment: attackerIsPlayer
+                                  ? const Alignment(-0.75, -0.75)
+                                  : const Alignment(0.75, 0.75),
+                              child: _impactRing(
+                                colorForType(b.lastMoveType),
+                                (a - 0.5) / 0.4,
+                              ),
+                            ),
+                          ),
+                        // K.O. dramático antes del resultado.
+                        if (b.winner != null) ...[
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                          ),
+                          const Positioned.fill(
+                            child: Center(child: _KoStamp()),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -605,6 +664,36 @@ class _FightViewState extends State<_FightView>
               b.busy ? 'Rival atacando...' : '¡Tu turno! Elige un ataque',
               textAlign: TextAlign.center,
               style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            // Poderes del rival a la vista.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text(
+                  'Rival:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                for (final m in b.enemyMoves)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: colorForType(m.type).withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: colorForType(m.type).withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Text(
+                      '${m.name} ${m.power}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -650,9 +739,79 @@ class _FightViewState extends State<_FightView>
   /// Curva de embestida: sale rápido y vuelve (0..1..0).
   double _lunge(double a) => a < 0.4 ? a / 0.4 : 1 - (a - 0.4) / 0.6;
 
-  /// Sacudida del golpeado: oscila mientras vuelve la embestida.
-  double _shake(double a) =>
-      a < 0.35 ? 0.0 : 7 * (1 - (a - 0.35) / 0.65) * _sin(a * 28);
+  /// Sacudida del golpeado: empieza al impactar el proyectil (a=0.5).
+  double _shake(double a) => a < 0.5
+      ? 0.0
+      : 7 * (1 - (a - 0.5) / 0.5) * _sin((a - 0.5) * 56);
+
+  /// Orbe de poder con estela y núcleo, del color del tipo del movimiento.
+  Widget _projectile(Color color) {
+    return SizedBox(
+      width: 46,
+      height: 30,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 42,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.8),
+                  blurRadius: 14,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 11,
+            height: 11,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Anillo de estallido que se expande y se disipa en el impacto.
+  Widget _impactRing(Color color, double t) {
+    final v = t.clamp(0.0, 1.0);
+    return Opacity(
+      opacity: 1 - v,
+      child: Transform.scale(
+        scale: 0.5 + v * 1.4,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 5),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.9),
+                blurRadius: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _fighterSprite({
     required String url,
@@ -704,8 +863,7 @@ class _FightViewState extends State<_FightView>
     );
   }
 
-  Widget _impactBanner(BattleProvider b, double a) {
-    if (b.attackSeq == 0 || a > 0.8) return const SizedBox.shrink();
+  Widget _impactBanner(BattleProvider b, double a) {    if (b.attackSeq == 0 || a > 0.8) return const SizedBox.shrink();
     String? text;
     Color bg = Colors.black87;
     if (b.lastCrit) {
@@ -740,6 +898,39 @@ class _FightViewState extends State<_FightView>
             color: Colors.white,
             fontWeight: FontWeight.w900,
             fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sello de K.O. con entrada elástica sobre la arena.
+class _KoStamp extends StatelessWidget {
+  const _KoStamp();
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.elasticOut,
+      builder: (context, v, _) => Transform.scale(
+        scale: 0.4 + 0.6 * v,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.amber, width: 3),
+          ),
+          child: const Text(
+            '¡K.O.!',
+            style: TextStyle(
+              color: Colors.amber,
+              fontSize: 40,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),

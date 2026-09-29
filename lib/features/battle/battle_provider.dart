@@ -42,6 +42,9 @@ class BattleProvider extends ChangeNotifier {
   double lastEffectiveness = 1.0;
   bool lastCrit = false;
   int attackSeq = 0;
+  // Poder que se está viendo volar (para pintar el proyectil de su color).
+  String lastMoveName = '';
+  String lastMoveType = 'normal';
 
   Future<TypeRelations> _rel(String type) async {
     final lower = type.toLowerCase();
@@ -94,6 +97,8 @@ class BattleProvider extends ChangeNotifier {
     lastEffectiveness = 1.0;
     lastCrit = false;
     attackSeq = 0;
+    lastMoveName = '';
+    lastMoveType = 'normal';
     log
       ..clear()
       ..add('¡${prettyName(player!.name)} vs ${prettyName(enemy!.name)} salvaje!');
@@ -131,6 +136,8 @@ class BattleProvider extends ChangeNotifier {
     lastDamage = dmg;
     lastEffectiveness = eff;
     lastCrit = crit;
+    lastMoveName = move.name;
+    lastMoveType = move.type;
     attackSeq++;
     log.add(
       '${prettyName(player!.name)} usa ${move.name} (-$dmg).${crit ? ' ¡Golpe crítico!' : ''} ${effectivenessText(eff)}',
@@ -139,8 +146,11 @@ class BattleProvider extends ChangeNotifier {
 
     if (enemyHp <= 0) {
       winner = 'player';
+      log.add('¡Rival debilitado!');
+      // Pausa dramática: se ve el K.O. en la arena antes del resultado.
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 1500));
       phase = BattlePhase.finished;
-      log.add('¡Rival debilitado! ¡Ganaste!');
       busy = false;
       notifyListeners();
       return;
@@ -173,14 +183,19 @@ class BattleProvider extends ChangeNotifier {
     lastDamage = dmg;
     lastEffectiveness = eff;
     lastCrit = crit;
+    lastMoveName = move.name;
+    lastMoveType = move.type;
     attackSeq++;
     log.add(
       '${prettyName(enemy!.name)} usa ${move.name} (-$dmg).${crit ? ' ¡Golpe crítico!' : ''} ${effectivenessText(eff)}',
     );
     if (playerHp <= 0) {
       winner = 'enemy';
+      log.add('¡Tu Pokémon se debilitó!');
+      // Pausa dramática del K.O. antes de mostrar el resultado.
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 1500));
       phase = BattlePhase.finished;
-      log.add('¡Tu Pokémon se debilitó! Perdiste.');
     }
     notifyListeners();
   }
