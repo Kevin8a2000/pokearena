@@ -20,6 +20,7 @@ import 'arena_background.dart';
 import 'battle_terrain.dart';
 import 'gba/gba_terrains.dart';
 import '../team/team_provider.dart';
+import '../online/online_lobby_screen.dart';
 import 'battle_fx.dart';
 import 'battle_mode_card.dart';
 import 'battle_provider.dart';
@@ -53,7 +54,9 @@ class BattlePage extends StatelessWidget {
             BattlePhase.selecting => const _SelectView(),
             BattlePhase.fighting => b.hordeMode
                 ? const HordeFightView()
-                : const GbaEmulatorScreen(),
+                : b.gbaMode
+                    ? const GbaEmulatorScreen()
+                    : const _FightView(),
             BattlePhase.finished => const _ResultView(),
           },
         );
@@ -159,8 +162,6 @@ class _SelectViewState extends State<_SelectView> {
                 ),
               ),
               Text(_mode! ? 'Modo Batalla 2.5D' : 'Modo Batalla Normal', style: pokeText(26)),
-              const SizedBox(height: 10),
-              Text('Modo Batalla Normal', style: pokeText(26)),
               const SizedBox(height: 10),
               PokePanel(
                 color: const Color(0xFF2B57A6),
@@ -396,6 +397,14 @@ class _SelectViewState extends State<_SelectView> {
                 colors: const [Color(0xFF7ED06A), Color(0xFF3E9B49)],
                 illustration: const ArenaIllustration(),
                 onTap: () => _enter(true),
+              ),
+              const SizedBox(height: 14),
+              BattleModeCard(
+                title: 'Online',
+                subtitle: 'Duelo en tiempo real con un amigo (sala con código)',
+                colors: const [Color(0xFFFFA53A), Color(0xFFEF6C00)],
+                illustration: const OnlineIllustration(),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const OnlineLobbyScreen())),
               ),
             ],
           ),

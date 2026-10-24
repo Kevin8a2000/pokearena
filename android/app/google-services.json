@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "972782351102",
+    "project_id": "pokearena-4b846",
+    "storage_bucket": "pokearena-4b846.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972782351102:android:0716a3549070229909ebaf",
+        "android_client_info": {
+          "package_name": "com.example.pokearena"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkOr9bFVq3cY8ganGWflROt7nF_ngzY1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

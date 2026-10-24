@@ -6,6 +6,7 @@ import 'package:pokearena/core/services/pokeapi_service.dart';
 import 'package:pokearena/core/services/score_history_service.dart';
 import 'package:pokearena/core/services/sound_service.dart';
 import 'package:pokearena/core/widgets/poke_widgets.dart';
+import 'package:pokearena/features/auth/auth_provider.dart';
 import 'package:pokearena/features/battle/battle_provider.dart';
 import 'package:pokearena/features/profile/favorites_provider.dart';
 import 'package:pokearena/features/profile/profile_page.dart';
@@ -40,6 +41,7 @@ void main() {
         providers: [
           Provider<PokeApiService>.value(value: api),
           Provider<ScoreHistoryService>(create: (_) => ScoreHistoryService()),
+          ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
           ChangeNotifierProvider<TeamProvider>(create: (_) => TeamProvider(api)),
           ChangeNotifierProvider<FavoritesProvider>(create: (_) => FavoritesProvider(api)),
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),

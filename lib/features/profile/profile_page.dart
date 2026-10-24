@@ -11,6 +11,7 @@ import '../../core/widgets/pokeball_background.dart';
 import '../pokedex/pokedex_provider.dart';
 import '../pokedex/pokemon_detail_page.dart';
 import '../team/team_provider.dart';
+import '../auth/auth_provider.dart';
 import '../settings/settings_provider.dart';
 import 'favorites_provider.dart';
 
@@ -115,7 +116,7 @@ class _TrainerHeaderCard extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                'Entrenador PokéArena',
+                                context.watch<AuthProvider>().currentUser ?? 'Entrenador PokéArena',
                                 maxLines: 1,
                                 style: pokeText(28, shadows: pokeTextShadow),
                               ),
@@ -136,6 +137,12 @@ class _TrainerHeaderCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      PokeRoundButton(
+                        icon: Icons.logout,
+                        size: 44,
+                        tooltip: 'Cerrar sesión',
+                        onPressed: () => _confirmLogout(context),
+                      ),
                     ],
                   ),
                 ],
@@ -143,6 +150,26 @@ class _TrainerHeaderCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('Tus datos se guardan. Otra persona podrá entrar con su cuenta.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthProvider>().logout();
+            },
+            child: const Text('Salir'),
+          ),
+        ],
       ),
     );
   }
