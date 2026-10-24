@@ -10,6 +10,7 @@ import '../../core/services/pokeapi_service.dart';
 import '../../core/services/score_history_service.dart';
 import '../../core/services/sound_service.dart';import '../../core/theme/type_colors.dart';
 import '../../core/theme/poke_design.dart';
+import '../../core/widgets/mode_illustrations.dart';
 import '../../core/widgets/poke_image.dart';
 import '../../core/widgets/poke_widgets.dart';
 import '../wallet/coin_chip.dart';
@@ -20,13 +21,15 @@ import 'battle_terrain.dart';
 import 'gba/gba_terrains.dart';
 import '../team/team_provider.dart';
 import 'battle_fx.dart';
+import 'battle_mode_card.dart';
 import 'battle_provider.dart';
 import 'battle_tutorial.dart';
 import 'gba/gba_emulator_screen.dart';
 import 'battle_sound.dart';
+import 'horde_fight_view.dart';
 import 'vs_intro.dart';
 
-/// MÓDULO: Simulador de batalla (Sprint 3 + vista GBA del Sprint 5).
+/// MÓDULO: Simulador de batalla (Sprint 3 + vista GBA del Sprint 5 + 2.5D del Sprint 6).
 /// Elige de tu equipo (o inicial) vs rival salvaje, por turnos.
 class BattlePage extends StatelessWidget {
   const BattlePage({super.key});
@@ -37,10 +40,10 @@ class BattlePage extends StatelessWidget {
         MediaQuery.orientationOf(context) == Orientation.landscape;
     return Consumer<BattleProvider>(
       builder: (context, b, _) {
-        // GBA a pantalla completa en horizontal: sin AppBar.
+        // GBA y 2.5D a pantalla completa en horizontal: sin AppBar.
         final fullGba = landscape &&
             b.phase == BattlePhase.fighting &&
-            b.gbaMode;
+            (b.gbaMode || b.hordeMode);
         return Scaffold(
           // La selección dibuja su propia cabecera (portada o preparación).
           appBar: fullGba || b.phase == BattlePhase.selecting
@@ -48,7 +51,9 @@ class BattlePage extends StatelessWidget {
               : AppBar(title: const Text('Simulador de batalla')),
           body: switch (b.phase) {
             BattlePhase.selecting => const _SelectView(),
-            BattlePhase.fighting => const GbaEmulatorScreen(),
+            BattlePhase.fighting => b.hordeMode
+                ? const HordeFightView()
+                : const GbaEmulatorScreen(),
             BattlePhase.finished => const _ResultView(),
           },
         );
@@ -65,6 +70,7 @@ class _SelectView extends StatefulWidget {
 
 class _SelectViewState extends State<_SelectView> {
   bool _init = false;
+  bool? _mode; // null = portada (elegir modo); si no, setup de ese modo.
 
   @override
   void didChangeDependencies() {
@@ -117,8 +123,14 @@ class _SelectViewState extends State<_SelectView> {
   Widget build(BuildContext context) {
     final b = context.watch<BattleProvider>();
     final team = context.watch<TeamProvider>().team;
-    final terrains = gbaTerrains.where((t) => t.forNormal).toList();
+    // Terrenos propios de cada modo: el 2.5D usa sus 18 con foto y el
+    // Normal su lista GBA de 10 pintados por código.
+    final isHorde = _mode == true;
+    final terrains = isHorde
+        ? battleTerrains.where((t) => t.forHorde).toList()
+        : gbaTerrains.where((t) => t.forNormal).toList();
 
+    if (_mode == null) return _cover(context);
     return PokeScaffold(
       centerTitle: true,
       title: const FittedBox(fit: BoxFit.scaleDown, child: PokeLogoText('Simulador de batalla', size: 38)),
@@ -129,16 +141,25 @@ class _SelectViewState extends State<_SelectView> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
-              const Row(
-                children: [
-                  CoinChip(golden: true),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Gana batallas para desbloquear avatares', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => setState(() => _mode = null),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.arrow_back, size: 20, color: Color(0xFFFF8A75)),
+                        const SizedBox(width: 6),
+                        Text('Elegir modo', style: pokeText(18, color: const Color(0xFFFF8A75))),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              Text(_mode! ? 'Modo Batalla 2.5D' : 'Modo Batalla Normal', style: pokeText(26)),
+              const SizedBox(height: 10),
               Text('Modo Batalla Normal', style: pokeText(26)),
               const SizedBox(height: 10),
               PokePanel(
@@ -230,9 +251,9 @@ class _SelectViewState extends State<_SelectView> {
                 itemCount: terrains.length,
                 itemBuilder: (context, i) {
                   final t = terrains[i];
-                  final sel = b.gbaTerrainId == t.id;
+                  final sel = isHorde ? b.terrainId == t.id : b.gbaTerrainId == t.id;
                   return GestureDetector(
-                    onTap: () => b.setGbaTerrain(t.id),
+                    onTap: () => isHorde ? b.setTerrain(t.id) : b.setGbaTerrain(t.id),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       decoration: BoxDecoration(
@@ -336,6 +357,63 @@ class _SelectViewState extends State<_SelectView> {
     );
   }
 
+  /// Portada: título, moneda y las 3 tarjetas de modo (diseño "colores Pokémon").
+  Widget _cover(BuildContext context) {
+    return PokeScaffold(
+      centerTitle: true,
+      title: const FittedBox(fit: BoxFit.scaleDown, child: PokeLogoText('Simulador de batalla', size: 38)),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+            children: [
+              const Row(
+                children: [
+                  CoinChip(golden: true),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Gana batallas para desbloquear avatares', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('Modos de batalla', style: pokeText(24)),
+              const SizedBox(height: 10),
+              BattleModeCard(
+                title: 'Normal',
+                subtitle: 'Vista GBA clásica',
+                colors: const [Color(0xFF5AA2F2), Color(0xFF2F63CF)],
+                pokeballTexture: true,
+                illustration: const GbaIllustration(),
+                onTap: () => _enter(false),
+              ),
+              const SizedBox(height: 14),
+              BattleModeCard(
+                title: '2.5D',
+                subtitle: 'Arena con perspectiva',
+                colors: const [Color(0xFF7ED06A), Color(0xFF3E9B49)],
+                illustration: const ArenaIllustration(),
+                onTap: () => _enter(true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Entra al modo (false = Normal, true = 2.5D): fija la vista,
+  /// relanza el rival y muestra su configuración con sus terrenos.
+  void _enter(bool horde) {
+    final b = context.read<BattleProvider>();
+    if (b.hordeMode != horde) {
+      b.setHordeMode(horde);
+      b.rollEnemyTeam(size: b.enemyCount);
+    }
+    setState(() => _mode = horde);
+  }
 }
 
 /// Selector de cantidad de luchadores (1-3): − rojo, número y + verde.

@@ -17,6 +17,7 @@ import 'battle_hints.dart';
 import 'battle_sound.dart';
 import 'battle_terrain.dart';
 import 'gba/gba_intro.dart';
+import 'horde_intro.dart';
 import 'gba/gba_sprites.dart';
 import 'gba/gba_terrains.dart';
 import 'vs_intro.dart';
@@ -245,7 +246,15 @@ class BattleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Tamaños de equipo elegibles (1-3 por lado) ---
+  // --- Modo Horda 2.5D: tú vs rivales en arena con perspectiva ---
+  bool hordeMode = false;
+
+  void setHordeMode(bool v) {
+    hordeMode = v;
+    notifyListeners();
+  }
+
+  // --- Tamaños de equipo elegibles (1-3 por lado, clásico y horda) ---
   int playerCount = 3;
   int enemyCount = 3;
 
@@ -565,8 +574,8 @@ class BattleProvider extends ChangeNotifier {
     // si quedara en true, los botones morirían con el menú visible.
     // Entrada con entrenadores en la vista GBA Normal y en la 2.5D; la vista
     // moderna (sin GBA ni horda) y Online conservan su entrada corta.
-    introRich = gbaMode;
-    introTotalMs = IntroTimeline.total;
+    introRich = gbaMode || hordeMode;
+    introTotalMs = hordeMode ? HordeIntro.total(enemyTeam.length) : IntroTimeline.total;
     _introSkipped = false;
     entering = true;
     vsFlash = true;
@@ -598,7 +607,7 @@ class BattleProvider extends ChangeNotifier {
       if (introRich) {
         Future.delayed(const Duration(milliseconds: IntroTimeline.playerCryAt), cryPlayer);
         Future.delayed(
-          const Duration(milliseconds: IntroTimeline.rivalCryAt),
+          Duration(milliseconds: hordeMode ? HordeIntro.cryAt(enemyActive) : IntroTimeline.rivalCryAt),
           cryEnemy,
         );
       } else {
