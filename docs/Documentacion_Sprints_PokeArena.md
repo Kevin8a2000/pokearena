@@ -445,6 +445,77 @@ tutorial interactivo que resalta los botones reales en vez de solo texto.
 
 ---
 
+## Sprint 6 — Modo de batalla 2.5D por hordas
+**Duración planeada:** 3–9 nov 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint6-horda-2d`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Sumar un segundo modo de batalla (2.5D, arena con perspectiva) que
+reutilice el motor de combate por equipos construido en el Sprint 5, y
+dar a elegir entre los dos modos desde una portada en vez de entrar
+directo a uno solo.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| H1 | Como usuario, quiero elegir entre el modo Normal (GBA) y el 2.5D al entrar a Batalla. | ✅ Hecho |
+| H2 | Como usuario, quiero una arena con perspectiva y hasta 3 rivales visibles a la vez, no solo uno. | ✅ Hecho |
+| H3 | Como usuario, quiero terrenos propios para el modo 2.5D (18 fondos con foto), distintos a los 10 del modo Normal. | ✅ Hecho |
+| H4 | Como usuario, quiero que mis pociones, cambios y Movimiento Z funcionen igual que en el modo Normal. | ✅ Hecho |
+| H5 | Como equipo, queremos pruebas automáticas de la entrada con hordas y del formato de combate. | ✅ Hecho |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Portada "Modos de batalla" con dos tarjetas (Normal / 2.5D); cada una
+  entra a su propia configuración (equipo, dificultad, terreno, tamaño
+  1v1/2v2/3v3) reutilizando los mismos controles del Sprint 5.
+- Vista 2.5D: arena con perspectiva, hasta 3 Pokémon rivales visibles al
+  mismo tiempo, con su propia entrada animada y sus 18 terrenos con foto.
+- El motor de combate (PP, pociones, Movimiento Z, dificultad del Bot) es
+  exactamente el mismo que en el modo Normal: no se duplicó ninguna
+  regla de juego, solo cambia la presentación visual.
+- `flutter test`: **293/293 en verde** (se completó además la cobertura
+  de pruebas de `battle_fx`, `battle_fx_extra`, `battle_commentary` y
+  `battle_hints` que había quedado pendiente del Sprint 5).
+
+### 4. Decisiones técnicas y su justificación
+
+1. **Ninguna regla de combate nueva**: `hordeMode` en `BattleProvider` es
+   solo una bandera que cambia qué vista se dibuja (`HordeFightView` vs
+   `GbaEmulatorScreen`) y qué lista de terrenos/entrada usar; confirma que
+   separar "motor" de "presentación" en el Sprint 5 fue la decisión
+   correcta.
+2. **Portada de modos como pantalla propia** (`_cover`/`BattleModeCard`):
+   antes de este sprint no hacía falta, porque solo existía un modo;
+   ahora que hay dos, elegir modo es un paso explícito y reversible
+   (botón "Elegir modo" para volver atrás).
+
+### 5. Pendiente / conocido
+
+- La tercera tarjeta "Online" y el modo de batalla en tiempo real contra
+  otro jugador llegan en el Sprint 7, junto con las cuentas de usuario.
+- El audio (música de fondo, voces narradas con selección de género)
+  sigue pendiente de exponerse en Ajustes; eso es el Sprint 8.
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Reutilizar el motor de combate del Sprint 5 sin tocarlo redujo este sprint a solo la vista y la portada de modos. | Quedaron 4 archivos de pruebas (`battle_fx`, `battle_fx_extra`, `battle_commentary`, `battle_hints`) del Sprint 5 sin escribirse hasta este sprint. | Al cerrar un sprint, revisar que cada archivo nuevo tenga su test antes de dar el sprint por terminado, no dejarlo para el siguiente. |
+| Separar "elegir modo" como su propia pantalla (en vez de settear un flag oculto) hace evidente para el usuario qué modo está jugando. | — | — |
+
+### 7. Evidencia para la sustentación
+
+- Commit `feat(battle): modo 2.5D por hordas + selector de modo de batalla` en `feature/sprint6-horda-2d`, mergeado a `main`.
+- `flutter test`: `All tests passed!` — 293 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:
