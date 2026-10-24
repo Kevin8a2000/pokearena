@@ -39,6 +39,8 @@ dependencies:
   shared_preferences: ^2.5.5
   web: ^1.1.1
   audioplayers: ^6.8.1
+  confetti: ^0.8.0
+  flutter_tts: ^4.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -75,6 +77,18 @@ flutter:
     - assets/images/splash/splash_1.jpg
     - assets/images/splash/splash_2.png
     - assets/images/splash/splash_3.jpeg
+    # Fotos de arenas: pack CC0 "Battle Backgrounds" de Nidhoggn (OGA)
+    # + "Pixel Art Fantasy Game Battlegrounds" de CraftPix.net (OGA-BY 3.0).
+    # Excepción: gba_battle_platforms.png es un rip de fondos de batalla de
+    # Pokémon FireRed/LeafGreen (créditos en la propia imagen: "ripped by
+    # Desgardes. No credit needed"); válido para el proyecto de clase, no
+    # para publicar en tiendas.
+    # Excepción: vs_flash_backgrounds.png es un rip de los fondos de
+    # pantalla "VS" de Pokémon Platinum (créditos en la propia imagen:
+    # "VS. GYM/E4 BGS ripped by Dragon"); mismo uso educativo, no comercial.
+    - assets/images/arenas/
+    # Sprites FRLG de la batalla Normal (entrenadores, Poké Balls, efectos).
+    - assets/images/battle/
 
   # Fuente redondeada y gruesa para títulos y botones (Lilita One, SIL OFL 1.1;
   # licencia en assets/fonts/OFL-LilitaOne.txt).
