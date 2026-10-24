@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/models/pokemon.dart';
 import '../../core/models/type_relations.dart';
 import '../../core/services/pokeapi_service.dart';
+import '../../core/services/sound_service.dart';
 import 'team_coverage_calculator.dart';
 
 /// Gestor de estado del equipo Pokémon (módulo Equipo, Sprint 2).
@@ -16,6 +17,11 @@ class TeamProvider extends ChangeNotifier {
   final PokeApiService _apiService;
   final List<PokemonDetail> _team = [];
   final Map<String, TypeRelations> _relationsCache = {};
+
+  /// Dueño actual (login). null = datos globales de antes del login.
+  String? _owner;
+  String get _key =>
+      _owner == null ? _storageKey : '${_storageKey}_u_$_owner';
 
   bool _isLoadingTeam = false;
   bool _isLoadingCoverage = false;
@@ -54,10 +60,12 @@ class TeamProvider extends ChangeNotifier {
   /// Retorna `true` si se agregó exitosamente, o `false` en caso contrario.
   Future<bool> addPokemon(PokemonDetail pokemon) async {
     if (isFull || isInTeam(pokemon.id)) {
+      SoundService.wrong();
       return false;
     }
 
     _team.add(pokemon);
+    SoundService.correct();
     notifyListeners();
 
     await _saveTeamToStorage();
@@ -71,6 +79,7 @@ class TeamProvider extends ChangeNotifier {
     _team.removeWhere((p) => p.id == pokemonId);
 
     if (_team.length != beforeCount) {
+      SoundService.select();
       notifyListeners();
       await _saveTeamToStorage();
       await _recalculateCoverage();
@@ -138,10 +147,20 @@ class TeamProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = _team.map((p) => p.id.toString()).toList();
-      await prefs.setStringList(_storageKey, ids);
+      await prefs.setStringList(_key, ids);
     } catch (_) {
       // Si el almacenamiento falla, el equipo sigue en memoria sin interrumpir al usuario.
     }
+  }
+
+  /// Cambia de dueño (login/logout): limpia la memoria y carga
+  /// el equipo de ese usuario.
+  Future<void> switchUser(String? owner) async {
+    _owner = owner;
+    _team.clear();
+    _relationsCache.clear();
+    notifyListeners();
+    await loadSavedTeam();
   }
 
   /// Carga el equipo persistido al iniciar la aplicación.
@@ -151,10 +170,10 @@ class TeamProvider extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final ids = prefs.getStringList(_storageKey) ?? [];
+      final ids = prefs.getStringList(_key) ?? [];
 
+      _team.clear();
       if (ids.isNotEmpty) {
-        _team.clear();
         for (final idStr in ids.take(maxTeamSize)) {
           final id = int.tryParse(idStr);
           if (id != null) {

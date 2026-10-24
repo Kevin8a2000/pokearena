@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/models/pokemon.dart';
 import '../../core/services/pokeapi_service.dart';
+import '../../core/services/sound_service.dart';
 
 /// Gestor de estado de Pokémon favoritos (Sprint 2, Requisitos F1, F2, F3).
 /// Almacena los IDs favoritos, persiste la lista en SharedPreferences
@@ -14,6 +15,11 @@ class FavoritesProvider extends ChangeNotifier {
   final Set<int> _favoriteIds = {};
   List<PokemonSummary> _favorites = [];
   bool _isLoading = false;
+
+  /// Dueño actual (login). null = datos globales de antes del login.
+  String? _owner;
+  String get _key =>
+      _owner == null ? _storageKey : '${_storageKey}_u_$_owner';
 
   FavoritesProvider(this._apiService);
 
@@ -31,9 +37,11 @@ class FavoritesProvider extends ChangeNotifier {
     if (_favoriteIds.contains(id)) {
       _favoriteIds.remove(id);
       _favorites.removeWhere((p) => p.id == id);
+      SoundService.select();
     } else {
       _favoriteIds.add(id);
       _favorites.insert(0, PokemonSummary(id: id, name: name));
+      SoundService.correct();
     }
 
     notifyListeners();
@@ -55,10 +63,20 @@ class FavoritesProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final stringIds = _favoriteIds.map((id) => id.toString()).toList();
-      await prefs.setStringList(_storageKey, stringIds);
+      await prefs.setStringList(_key, stringIds);
     } catch (_) {
       // Manejo silencioso: la app continúa en memoria si falla el almacenamiento
     }
+  }
+
+  /// Cambia de dueño (login/logout): limpia la memoria y carga
+  /// los favoritos de ese usuario.
+  Future<void> switchUser(String? owner) async {
+    _owner = owner;
+    _favoriteIds.clear();
+    _favorites = [];
+    notifyListeners();
+    await loadFavorites();
   }
 
   /// Carga los favoritos guardados desde SharedPreferences y resuelve sus datos.
@@ -68,7 +86,7 @@ class FavoritesProvider extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stringIds = prefs.getStringList(_storageKey) ?? [];
+      final stringIds = prefs.getStringList(_key) ?? [];
 
       _favoriteIds.clear();
       for (final s in stringIds) {

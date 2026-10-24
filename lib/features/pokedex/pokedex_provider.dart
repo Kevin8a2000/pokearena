@@ -59,6 +59,10 @@ class PokedexProvider extends ChangeNotifier {
   List<String> typesFor(int id) => _typesById[id] ?? const [];
 
   bool get hasData => _all.isNotEmpty;
+
+  /// Lista completa sin filtrar (para buscadores que no deben compartir el
+  /// estado de filtros de la Pokédex, como el selector de avatar).
+  List<PokemonSummary> get all => List.unmodifiable(_all);
   bool get filtering => _pendingFilters > 0;
   bool get hasActiveFilters =>
       query.trim().isNotEmpty ||
