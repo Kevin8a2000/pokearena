@@ -56,6 +56,8 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.8
   fake_cloud_firestore: ^4.3.0
+  # Solo para tool/generate_manual.dart (empaqueta el .docx).
+  archive: ^4.5.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -92,6 +94,10 @@ flutter:
     - assets/images/arenas/
     # Sprites FRLG de la batalla Normal (entrenadores, Poké Balls, efectos).
     - assets/images/battle/
+    # Audio del Sprint 8: música de fondo + gritos locales (Gen 1, 1-151).
+    # Sin estas líneas el empaquetador omite ambos directorios.
+    - assets/audio/
+    - assets/cries/
 
   # Fuente redondeada y gruesa para títulos y botones (Lilita One, SIL OFL 1.1;
   # licencia en assets/fonts/OFL-LilitaOne.txt).

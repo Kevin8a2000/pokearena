@@ -603,6 +603,100 @@ teléfonos.
 
 ---
 
+## Sprint 8 — Audio, gritos y voces narradas
+**Duración planeada:** 17–23 nov 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint8-audio-voces`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Completar la experiencia sonora del juego: música de fondo en loop, los
+gritos de los Pokémon y una voz de narrador configurable, con controles
+reales en Ajustes (encender/apagar, volumen y género de la voz) en vez de
+valores fijos escondidos en el código.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| A1 | Como usuario, quiero música de fondo mientras navego por la app, con volumen ajustable y sin que suene durante la batalla. | ✅ Hecho |
+| A2 | Como usuario, quiero escuchar el grito de cada Pokémon al entrar y al debilitarse, incluso sin internet en los 151 originales. | ✅ Hecho |
+| A3 | Como usuario, quiero elegir entre voz de mujer y de hombre para el narrador, probarla y ajustar su volumen. | ✅ Hecho |
+| A4 | Como usuario, quiero que apagar el sonido general silencie también la música y la voz, y que al encenderlo vuelvan. | ✅ Hecho |
+| A5 | Como equipo, queremos pruebas automáticas de música, gritos, catálogo de voces y preferencias sin depender de audio real. | ✅ Hecho |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Música de fondo en loop desde que se pulsa JUGAR, con switch propio y
+  slider de volumen persistente; se pausa al entrar a la arena y se
+  reanuda al salir o terminar el combate.
+- Gritos de los Pokémon: los ids 1–151 vienen empaquetados en la app
+  (funcionan sin red) y el resto se descarga del repositorio oficial de
+  PokeAPI con varios respaldos; en KO el grito suena más grave.
+- Sección "Sonidos" en Ajustes: sonido general, música (switch + volumen)
+  y gritos en batalla.
+- Sección "Voz del narrador" en Ajustes: encender/apagar, elegir
+  ♀ Mujer / ♂ Hombre, volumen y botón "Probar voz". La preferencia se
+  guarda y sobrevive al reinicio.
+- Accesos directos al Tutorial de batalla y a los créditos de sprites
+  desde Ajustes.
+- `flutter test`: **494/494 en verde**.
+
+### 4. Decisiones técnicas y su justificación
+
+1. **`MusicService` como servicio estático con su propio `AudioPlayer`**,
+   separado de `SoundService` y `CryService`: cada canal tiene su volumen
+   y su ciclo de vida, así pausar la música para una batalla no afecta los
+   efectos ni los gritos.
+2. **Gritos locales para la Gen 1 y remotos para el resto**
+   (`assets/cries/1–151.ogg` + respaldo en PokeAPI/cries): garantiza que
+   la demo funcione sin internet para la Pokédex clásica, sin cargar 1000
+   audios en el APK.
+3. **`VoiceProvider` con solo dos géneros y un tono fijo por género**, en
+   vez de exponer la lista cruda de voces del sistema: muchos Android solo
+   traen una voz instalada, así que el tono (más agudo/más grave) asegura
+   que la diferencia se note siempre.
+4. **Declarar `assets/audio/` y `assets/cries/` explícitamente en
+   `pubspec.yaml`**: el empaquetador de Flutter no incluye carpetas nuevas
+   por sí solo; sin estas líneas la música y los gritos existían en disco
+   pero no llegaban al APK.
+5. **`PokemonVoiceService` (Fish Audio) queda opcional y aislado**: la key
+   se pasa con `--dart-define=FISH_AUDIO_API_KEY`; sin key el juego usa
+   `flutter_tts` y, si tampoco hay voces, el bocadillo de texto sigue
+   funcionando. Ninguna ruta de audio puede romper una batalla.
+
+### 5. Pendiente / conocido
+
+- El Duelo online sigue sin música ni narración propias; hereda la música
+  general y el silencio de la arena.
+- Las preferencias de voz se guardan por dispositivo, no por cuenta (a
+  diferencia del equipo o los favoritos): dos usuarios del mismo teléfono
+  comparten voz y volumen.
+- `PokemonVoiceService` (TTS neuronal de Fish Audio) está implementado
+  pero todavía no se conectó al narrador; hoy la voz sale de `flutter_tts`.
+- La música es un único tema en loop; no cambia por pantalla ni por modo.
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Aislar cada canal de audio (música, efectos, gritos, voz) en su propio servicio permitió apagarlos por separado y probarlos sin reproducir sonido real. | El sprint se dio por terminado sin verificar el bundle: faltaban `assets/audio/` y `assets/cries/` en `pubspec.yaml` y `VoiceProvider` no estaba registrado, así que Ajustes fallaba y la música no entraba al APK. | Antes de cerrar cualquier sprint, construir el bundle y revisar que los assets nuevos aparezcan dentro, además de correr analyze y tests. |
+| Los 151 gritos locales hacen que la demo clásica suene completa incluso en un salón sin internet. | Cuatro pruebas de Ajustes empezaron a fallar al añadir la sección de voz y se detectaron recién en el cierre. | Cuando un widget nuevo dependa de un provider, actualizar el harness de pruebas en el mismo commit, no después. |
+
+### 7. Evidencia para la sustentación
+
+- Commits `feat(audio): musica de fondo, gritos y voz del narrador`,
+  `test(settings): registra VoiceProvider en el harness` y
+  `chore(tool): generador del manual` en
+  `feature/sprint8-audio-voces`, mergeados a `main`.
+- `flutter build bundle` verificó `music.mp3` + 151 gritos dentro del
+  paquete.
+- `flutter test`: `All tests passed!` — 494 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:

@@ -14,6 +14,7 @@ import 'features/wallet/wallet_provider.dart';
 import 'features/pokedex/pokedex_provider.dart';
 import 'features/profile/favorites_provider.dart';
 import 'features/profile/theme_provider.dart';
+import 'features/profile/voice_provider.dart';
 import 'features/settings/settings_provider.dart';
 import 'features/quiz/quiz_provider.dart';
 import 'features/team/team_provider.dart';
@@ -49,6 +50,10 @@ class PokeArenaApp extends StatelessWidget {
         // Providers de estado de cada módulo
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider()..loadSavedTheme(),
+        ),
+        // Voz del narrador (Ajustes): sin este provider la pestaña falla.
+        ChangeNotifierProvider<VoiceProvider>(
+          create: (_) => VoiceProvider()..load(),
         ),
         ChangeNotifierProvider<PokedexProvider>(
           create: (ctx) => PokedexProvider(ctx.read<PokeApiService>())..load(),
