@@ -516,6 +516,93 @@ directo a uno solo.
 
 ---
 
+## Sprint 7 — Cuentas de usuario + Duelo en tiempo real
+**Duración planeada:** 10–16 nov 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint7-cuentas-duelo`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Dar a cada persona su propia cuenta (para que el equipo, favoritos,
+historial y monedas sean suyos y no se mezclen con los de otro), y sumar
+un tercer modo de batalla: Duelo en tiempo real contra otro jugador real,
+con salas por código, usando Firebase como mensajero entre los dos
+teléfonos.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| C1 | Como usuario, quiero iniciar sesión con un nombre antes de entrar a la app. | ✅ Hecho |
+| C2 | Como usuario, quiero que mi equipo, favoritos, historial y monedas sean solo míos, no los de quien usó la app antes. | ✅ Hecho |
+| C3 | Como usuario, quiero cerrar sesión para que otra persona entre con la suya en el mismo celular. | ✅ Hecho |
+| O1 | Como usuario, quiero crear una sala de Duelo y compartir un código para que un amigo se una. | ✅ Hecho |
+| O2 | Como usuario, quiero unirme a la sala de un amigo escribiendo su código. | ✅ Hecho |
+| O3 | Como usuario, quiero pelear en tiempo real contra esa persona (no por turnos), viendo sus movimientos al instante. | ✅ Hecho |
+| O4 | Como usuario, quiero que si mi rival se desconecta, gane yo por retiro en vez de quedar la partida colgada. | ✅ Hecho |
+| O5 | Como equipo, queremos pruebas automáticas del lobby y la sincronización de la sala sin depender de Firebase real. | ✅ Hecho (`fake_cloud_firestore`) |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Pantalla de inicio de sesión (nombre local, sin contraseña) antes de
+  entrar a la app; botón "Cerrar sesión" en Perfil.
+- Al iniciar sesión, el equipo, favoritos, historial de puntajes y
+  monedero de ESA persona se cargan (y se separan de los de cualquier
+  otra cuenta usada antes en el mismo dispositivo).
+- Tercera tarjeta "Online" en Batalla: crear sala (código de 4-6
+  caracteres) o unirse con el código de un amigo.
+- Duelo en tiempo real: ambos jugadores ven la misma arena (espejada
+  para el invitado), controlan su luchador con un analógico + botones de
+  golpe/escudo/poderes/esquivar/ultra, y el host decide el resultado
+  final; si el invitado se desconecta, el host gana por retiro.
+- `flutter test`: **466/466 en verde**, incluido el Duelo y el lobby
+  probados con `fake_cloud_firestore` (sin necesitar un proyecto Firebase
+  real ni conexión).
+
+### 4. Decisiones técnicas y su justificación
+
+1. **`AuthProvider` separado de Firebase**: el login es local (solo un
+   nombre, guardado en el dispositivo), no pide red ni cuenta de Google;
+   Firebase se usa únicamente para sincronizar la sala del Duelo entre
+   los dos teléfonos.
+2. **Cada provider con datos por usuario expone `switchUser(String?
+   owner)`** (ya preparado desde Sprints anteriores en `TeamProvider`,
+   `FavoritesProvider`, `ScoreHistoryService`, `WalletProvider`,
+   `SettingsProvider`): al iniciar sesión, `AuthGate` solo tiene que
+   llamar a los 5 con el nombre de la cuenta, sin tocar su lógica interna.
+3. **`fake_cloud_firestore` para las pruebas del Duelo/lobby**: permite
+   probar la sincronización de salas y partidas completas sin depender
+   de un proyecto Firebase real ni de conexión a internet durante
+   `flutter test`.
+4. **Firebase es opcional al arrancar** (`try/catch` alrededor de
+   `Firebase.initializeApp`): si falla la inicialización (sin red, sin
+   `google-services.json` válido), el resto de la app sigue funcionando
+   100% offline; solo el modo Online queda inutilizable.
+
+### 5. Pendiente / conocido
+
+- El Duelo en tiempo real no tiene narración por voz ni música propia
+  todavía (llega, junto con el resto del audio, en el Sprint 8).
+- `android/app/google-services.json` queda commiteado tal cual en el
+  repositorio (proyecto académico: así cualquiera que clone el repo
+  puede compilarlo sin pasos extra).
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Diseñar `switchUser(owner)` en cada provider desde sprints anteriores (aunque entonces no hubiera login) hizo que conectar las cuentas en este sprint fuera solo 5 llamadas en `AuthGate`, no una reescritura. | Probar un flujo en tiempo real (Duelo) exige más cuidado que uno por turnos: hubo que apoyarse en `fake_cloud_firestore` para no depender de temporización real de red en las pruebas. | Para cualquier función futura que dependa de un servicio externo (red, sensores), diseñar desde el día 1 una versión "fake" inyectable para pruebas. |
+| Mantener Firebase opcional (`try/catch` al iniciar) evitó que un problema de red o configuración rompiera toda la app. | — | — |
+
+### 7. Evidencia para la sustentación
+
+- Commit `feat(online): cuentas de usuario (login local) + Duelo en tiempo real con Firebase` en `feature/sprint7-cuentas-duelo`, mergeado a `main`.
+- `flutter test`: `All tests passed!` — 466 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:
