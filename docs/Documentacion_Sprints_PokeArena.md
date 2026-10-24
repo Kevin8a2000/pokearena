@@ -356,6 +356,95 @@ se sienta parte de la misma app.
 
 ---
 
+## Sprint 5 — Modo de batalla GBA + tutorial interactivo
+**Duración planeada:** 27 oct – 2 nov 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint5-gba-tutorial`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Llevar la Batalla de un duelo 1 contra 1 a un combate completo estilo
+videojuego Pokémon: equipos de hasta 3, cambios, pociones, un movimiento
+especial cargable, una consola GBA retro como vista principal, y un
+tutorial interactivo que resalta los botones reales en vez de solo texto.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| G1 | Como usuario, quiero armar un equipo de hasta 3 Pokémon (no solo 1) para la batalla. | ✅ Hecho |
+| G2 | Como usuario, quiero cambiar de Pokémon durante el combate si el rival me gana en tipo. | ✅ Hecho |
+| G3 | Como usuario, quiero usar una poción limitada para curarme a costa de mi turno. | ✅ Hecho |
+| G4 | Como usuario, quiero cargar un Movimiento Z peleando y soltarlo cuando esté listo. | ✅ Hecho |
+| G5 | Como usuario, quiero elegir la dificultad del Bot (fácil/normal/difícil) y el terreno de la batalla. | ✅ Hecho |
+| G6 | Como usuario, quiero una vista estilo consola GBA (pantalla + mando) en vez de la vista de tarjetas simple. | ✅ Hecho |
+| G7 | Como usuario, quiero un tutorial que resalte cada botón real de combate (no un ejemplo aparte) la primera vez que juego. | ✅ Hecho |
+| G8 | Como usuario, quiero que mi Pokémon y el rival suenen al entrar y que un comentarista narre los golpes importantes. | ✅ Hecho |
+| G9 | Como equipo, queremos pruebas automáticas de la orientación forzada, el terreno y el tutorial. | ✅ Hecho |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Selección de hasta 3 Pokémon de tu equipo, dificultad del Bot (con su
+  propia tasa de crítico e IA), 10 terrenos GBA pintados por código y
+  tamaño de equipo 1v1/2v2/3v3 por lado.
+- Combate con PP por ataque, poción limitada, cambio de Pokémon (cede el
+  turno), carga de Movimiento Z al pelear y entrada animada con los dos
+  entrenadores lanzando sus Poké Balls.
+- Vista de consola GBA: pantalla con el combate + mando con cruceta y
+  botones A/B/START/SELECT, también jugable por toques directos.
+- Tutorial con foco de luz: resalta uno a la vez los botones reales
+  (LUCHAR/MOCHILA/POKÉMON/HUIR) y lo que abren (ataques, poción, equipo),
+  oscureciendo y bloqueando el resto, más las 4 láminas previas que
+  explican las reglas generales.
+- Gritos de los Pokémon al entrar y comentarista de combate (texto +
+  narración por voz) en los golpes críticos, fallos y súper-efectivos.
+- `flutter test`: **180/180 en verde**.
+
+### 4. Decisiones técnicas y su justificación
+
+1. **El motor de equipos (PP/pociones/Movimiento Z/dificultad) vive en el
+   mismo `BattleProvider`** que ya existía, no en uno aparte: la vista
+   GBA es una "piel" sobre el mismo estado, lo que permitirá que un futuro
+   modo (2.5D) reutilice exactamente la misma lógica de combate sin
+   duplicarla.
+2. **Tutorial con `GlobalKey` sobre los widgets reales** (`gba_action_
+   spotlight.dart`) en vez de capturas de pantalla o ejemplos de mentira:
+   el foco de luz mide la posición exacta del botón real en pantalla, así
+   nunca se desincroniza del diseño.
+3. **Comentarista y gritos aislados en sus propios servicios**
+   (`battle_commentary.dart`, `cry_service.dart`, `narrator_service.dart`)
+   con banderas para apagarlos (`battleCriesEnabled`, `voiceEnabled`):
+   quedan listos para que Ajustes los exponga más adelante.
+4. **Orientación horizontal forzada con contador de referencias**
+   (`BattleOrientation`), no un booleano simple, para que si más de un
+   consumidor la pide (por ejemplo, un futuro combate online) no se
+   restaure la vertical hasta que todos la suelten.
+
+### 5. Pendiente / conocido
+
+- El modo "2.5D" (varios rivales a la vez) y el selector de modo de
+  batalla (Normal/2.5D/Online) llegan en el Sprint 6, reutilizando este
+  mismo motor de combate.
+- El comentarista narrado y los gritos no tienen todavía un control de
+  voz/volumen propio en Ajustes (día a día siguen con sus valores por
+  defecto); eso se termina de exponer en el Sprint 8 (Audio).
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Diseñar el tutorial para medir botones reales (`GlobalKey`) en vez de maquetar pantallas de ejemplo ahorró mantenerlo sincronizado a mano. | El `BattleProvider` creció mucho en un solo sprint (equipos, PP, pociones, Z, terreno, comentarista); para el Sprint 6 conviene no sumarle más responsabilidades nuevas, solo el modo 2.5D reutilizando lo ya construido. | Si el Sprint 6 necesita algo que hoy no existe en el motor, evaluar primero si de verdad es exclusivo de 2.5D o si en realidad lo necesitan ambos modos. |
+| Separar gritos/comentarista en servicios propios con su propia bandera on/off evitó acoplar el audio al resto del combate. | Falta control de voz/volumen visible para el usuario (llega en Sprint 8). | Documentar esa dependencia en el Sprint Goal del Sprint 8 para no olvidarla. |
+
+### 7. Evidencia para la sustentación
+
+- Commit `feat(battle): modo GBA con combate por equipos, tutorial interactivo, comentarista y gritos` en `feature/sprint5-gba-tutorial`, mergeado a `main`.
+- `flutter test`: `All tests passed!` — 180 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:
