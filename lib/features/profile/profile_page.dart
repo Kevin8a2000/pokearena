@@ -4,46 +4,45 @@ import 'package:provider/provider.dart';
 import '../../core/models/pokemon.dart';
 import '../../core/models/score_entry.dart';
 import '../../core/services/score_history_service.dart';
+import '../../core/theme/poke_design.dart';
+import '../../core/widgets/poke_image.dart';
+import '../../core/widgets/poke_widgets.dart';
+import '../../core/widgets/pokeball_background.dart';
+import '../pokedex/pokedex_provider.dart';
 import '../pokedex/pokemon_detail_page.dart';
 import '../team/team_provider.dart';
+import '../settings/settings_provider.dart';
 import 'favorites_provider.dart';
-import 'theme_provider.dart';
 
 /// MÓDULO: Perfil y favoritos (Sprint 2, tareas F1 a F5).
 /// Incluye:
 /// - Selector de tema (Claro / Oscuro / Sistema) con persistencia (F4).
 /// - Lista de Pokémon favoritos con navegación al detalle y desmarcado (F3).
 /// - Historial de puntajes registrado para el futuro módulo Quiz (F5).
+///
+/// Diseño "colores Pokémon": fondo marino, tarjeta de entrenador roja/blanca
+/// y un gran panel marino con borde dorado para los ajustes.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil y Ajustes'),
-      ),
+    return PokeScaffold(
+      centerTitle: true,
+      title: const PokeLogoText('Perfil', size: 34, arched: true),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: const BoxConstraints(maxWidth: 700),
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: const [
-              // Tarjeta de bienvenida del entrenador
               _TrainerHeaderCard(),
-              SizedBox(height: 20),
-
-              // Selector de tema (F4)
-              _ThemeSelectorSection(),
-              SizedBox(height: 24),
-
-              // Lista de favoritos (F3)
+              SizedBox(height: 16),
+              _WallpaperSection(),
+              SizedBox(height: 16),
               _FavoritesSection(),
-              SizedBox(height: 24),
-
-              // Historial de puntajes (F5)
+              SizedBox(height: 16),
               _ScoreHistorySection(),
-              SizedBox(height: 24),
             ],
           ),
         ),
@@ -52,56 +51,92 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-/// Encabezado con información general del perfil del usuario.
+/// Encabezado del entrenador: mitad roja / mitad blanca con avatar en aro dorado.
 class _TrainerHeaderCard extends StatelessWidget {
   const _TrainerHeaderCard();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black, width: 3),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(21),
+        child: Stack(
           children: [
-            CircleAvatar(
-              radius: 32,
-              backgroundColor: scheme.primaryContainer,
-              child: Icon(Icons.catching_pokemon, size: 38, color: scheme.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+            // Mitad roja arriba, blanca abajo (como una Pokébola).
+            Positioned.fill(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Entrenador PokéArena',
-                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Consumer2<FavoritesProvider, TeamProvider>(
-                    builder: (context, favs, team, _) {
-                      return Wrap(
-                        spacing: 8,
-                        children: [
-                          _BadgeChip(
-                            icon: Icons.favorite,
-                            label: '${favs.count} Favs',
-                            color: Colors.redAccent,
+                  Expanded(child: Container(color: PokeColors.red)),
+                  Container(height: 3, color: Colors.black),
+                  Expanded(child: Container(color: Colors.white)),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _pickAvatar(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(color: PokeColors.gold, width: 4),
+                            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2))],
                           ),
-                          _BadgeChip(
-                            icon: Icons.groups,
-                            label: '${team.count}/6 Equipo',
-                            color: scheme.primary,
+                          child: Builder(
+                            builder: (context) {
+                              final avatarId = context.watch<SettingsProvider>().avatarId;
+                              if (avatarId == null) {
+                                return const SizedBox(width: 64, height: 64, child: Center(child: PokeBallIcon(size: 48)));
+                              }
+                              return ClipOval(
+                                child: PokeImage(id: avatarId, kind: PokeSpriteKind.artwork, width: 64, height: 64, cacheWidth: 128, preferLocalAvatar: true),
+                              );
+                            },
                           ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Entrenador PokéArena',
+                                maxLines: 1,
+                                style: pokeText(28, shadows: pokeTextShadow),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Consumer2<FavoritesProvider, TeamProvider>(
+                              builder: (context, favs, team, _) {
+                                return Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: [
+                                    _BadgeChip(icon: Icons.favorite, label: '${favs.count} Favs', color: PokeColors.red),
+                                    _BadgeChip(icon: Icons.groups, label: '${team.count}/6 Equipo', color: PokeColors.blue),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -118,90 +153,118 @@ class _BadgeChip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _BadgeChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _BadgeChip({required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black, width: 2),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
-          ),
-        ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: pokeText(14, color: PokeColors.ink)),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Selector de tema de la aplicación (Requisito F4).
-class _ThemeSelectorSection extends StatelessWidget {
-  const _ThemeSelectorSection();
+/// Título de sección dentro de un panel: icono dorado + texto.
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color iconColor;
+  const _SectionTitle(this.icon, this.text, {this.iconColor = PokeColors.goldLight});
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Row(
-          children: [
-            const Icon(Icons.palette_outlined, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Tema de la aplicación',
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Personaliza el aspecto visual. El tema elegido se guarda para futuras sesiones:',
-          style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
-        ),
-        const SizedBox(height: 12),
-        Consumer<ThemeProvider>(
-          builder: (context, themeProvider, _) {
-            return SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment<ThemeMode>(
-                  value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode),
-                  label: Text('Claro'),
-                ),
-                ButtonSegment<ThemeMode>(
-                  value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode),
-                  label: Text('Oscuro'),
-                ),
-                ButtonSegment<ThemeMode>(
-                  value: ThemeMode.system,
-                  icon: Icon(Icons.brightness_auto),
-                  label: Text('Sistema'),
-                ),
-              ],
-              selected: {themeProvider.themeMode},
-              onSelectionChanged: (newSelection) {
-                themeProvider.setThemeMode(newSelection.first);
-              },
-            );
-          },
-        ),
+        Icon(icon, size: 22, color: iconColor),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: pokeText(21, color: PokeColors.goldLight))),
       ],
+    );
+  }
+}
+
+/// Fondo de la Pokédex: elegir el wallpaper (antes vivía en Ajustes).
+class _WallpaperSection extends StatelessWidget {
+  const _WallpaperSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    return PokePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle(Icons.image_outlined, 'Fondo de Pokédex'),
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 0.7,
+            ),
+            itemCount: wallpapers.length,
+            itemBuilder: (context, i) {
+              final path = wallpapers[i];
+              final selected = settings.wallpaper == path;
+              return GestureDetector(
+                onTap: () => settings.setWallpaper(path),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: selected ? PokeColors.goldLight : Colors.black, width: selected ? 4 : 3),
+                    boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 2))],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (path == kNavyWallpaper)
+                          const PokeballBackground(cell: 56)
+                        else
+                          Image.asset(
+                            path,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              color: Colors.grey.shade800,
+                              child: const Icon(Icons.broken_image, color: Colors.white54),
+                            ),
+                          ),
+                        if (selected)
+                          const Align(
+                            alignment: Alignment.bottomRight,
+                            child: Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.check_circle, color: PokeColors.goldLight),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -212,89 +275,63 @@ class _FavoritesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-
     return Consumer<FavoritesProvider>(
       builder: (context, favProvider, _) {
         final favorites = favProvider.favorites;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.favorite, size: 20, color: Colors.redAccent),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Mis Favoritos (${favProvider.count})',
-                      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                if (favProvider.isLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            if (favorites.isEmpty)
-              Card(
-                elevation: 0,
-                color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: scheme.outlineVariant),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.favorite_border, size: 44, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text(
-                          'No tienes favoritos guardados',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Toca el corazón en la esquina superior del detalle de cualquier Pokémon para guardarlo aquí.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 180,
-                  mainAxisExtent: 170,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: favorites.length,
-                itemBuilder: (context, index) {
-                  final p = favorites[index];
-                  return _FavoriteCard(
-                    pokemon: p,
-                    onRemove: () => favProvider.removeFavorite(p.id),
-                  );
-                },
+        return PokePanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _SectionTitle(Icons.favorite, 'Mis Favoritos (${favProvider.count})', iconColor: PokeColors.red)),
+                  if (favProvider.isLoading)
+                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                ],
               ),
-          ],
+              const SizedBox(height: 10),
+              if (favorites.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.favorite_border, size: 44, color: Colors.white54),
+                      SizedBox(height: 8),
+                      Text('No tienes favoritos guardados', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      SizedBox(height: 4),
+                      Text(
+                        'Toca el corazón en la esquina superior del detalle de cualquier Pokémon para guardarlo aquí.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180,
+                    mainAxisExtent: 170,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    final p = favorites[index];
+                    return _FavoriteCard(pokemon: p, onRemove: () => favProvider.removeFavorite(p.id));
+                  },
+                ),
+            ],
+          ),
         );
       },
     );
@@ -317,8 +354,6 @@ class _FavoriteCardState extends State<_FavoriteCard> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -326,43 +361,24 @@ class _FavoriteCardState extends State<_FavoriteCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        transform: _isHovered
-            ? Matrix4.translationValues(0.0, -6.0, 0.0)
-            : Matrix4.identity(),
+        transform: _isHovered ? Matrix4.translationValues(0.0, -6.0, 0.0) : Matrix4.identity(),
         decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: _isHovered
-                ? Colors.redAccent.withValues(alpha: 0.6)
-                : scheme.outlineVariant.withValues(alpha: 0.3),
-            width: _isHovered ? 1.5 : 1,
-          ),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: Colors.redAccent.withValues(alpha: 0.22),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          color: PokeColors.cream,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _isHovered ? PokeColors.red : Colors.black, width: 2.5),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered ? PokeColors.red.withValues(alpha: 0.4) : Colors.black38,
+              blurRadius: _isHovered ? 14 : 4,
+              offset: Offset(0, _isHovered ? 6 : 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PokemonDetailPage(id: widget.pokemon.id),
-              ),
-            );
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => PokemonDetailPage(id: widget.pokemon.id)));
           },
           child: Stack(
             children: [
@@ -377,21 +393,13 @@ class _FavoriteCardState extends State<_FavoriteCard> {
                           scale: _isHovered ? 1.12 : 1.0,
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutBack,
-                          child: Image.network(
-                            widget.pokemon.imageUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.broken_image),
-                          ),
+                          child: PokeImage(id: widget.pokemon.id, fit: BoxFit.contain, cacheWidth: 256, placeholderColor: Colors.grey),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '#${widget.pokemon.id.toString().padLeft(3, '0')} ${prettyName(widget.pokemon.name)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                        style: pokeText(14, color: PokeColors.ink),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -405,7 +413,7 @@ class _FavoriteCardState extends State<_FavoriteCard> {
                 child: IconButton(
                   iconSize: 20,
                   tooltip: 'Quitar de favoritos',
-                  icon: const Icon(Icons.favorite, color: Colors.redAccent),
+                  icon: const Icon(Icons.favorite, color: PokeColors.red),
                   onPressed: widget.onRemove,
                 ),
               ),
@@ -424,76 +432,261 @@ class _ScoreHistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final historyService = context.read<ScoreHistoryService>();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.military_tech_outlined, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Historial de Puntajes',
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Registro de partidas en minijuegos (módulo Quiz / Sprint 3):',
-          style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
-        ),
-        const SizedBox(height: 10),
+    return PokePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle(Icons.military_tech_outlined, 'Historial de Puntajes'),
+          const SizedBox(height: 4),
+          const Text(
+            'Registro de partidas en minijuegos (módulo Quiz / Sprint 3):',
+            style: TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          FutureBuilder<List<ScoreEntry>>(
+            future: historyService.getHistory(),
+            builder: (context, snap) {
+              if (snap.connectionState != ConnectionState.done) {
+                return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(color: Colors.white)));
+              }
 
-        FutureBuilder<List<ScoreEntry>>(
-          future: historyService.getHistory(),
-          builder: (context, snap) {
-            if (snap.connectionState != ConnectionState.done) {
-              return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));
-            }
-
-            final entries = snap.data ?? [];
-            if (entries.isEmpty) {
-              return Card(
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: Text(
-                      'Aún no hay partidas jugadas en el Quiz.',
-                      style: TextStyle(fontSize: 12),
-                    ),
+              final entries = snap.data ?? [];
+              if (entries.isEmpty) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white24),
                   ),
-                ),
-              );
-            }
-
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: entries.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final e = entries[i];
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.emoji_events, color: Colors.amber),
-                  title: Text(e.gameName),
-                  subtitle: Text('${e.date.day}/${e.date.month}/${e.date.year}'),
-                  trailing: Text(
-                    '${e.score} pts',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  child: const Center(
+                    child: Text('Aún no hay partidas jugadas en el Quiz.', style: TextStyle(fontSize: 12, color: Colors.white70)),
                   ),
                 );
-              },
-            );
-          },
-        ),
-      ],
+              }
+
+              return Material(
+                type: MaterialType.transparency,
+                child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: entries.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white24),
+                itemBuilder: (context, i) {
+                  final e = entries[i];
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.emoji_events, color: PokeColors.goldLight),
+                    title: Text(e.gameName, style: pokeText(17)),
+                    subtitle: Text('${e.date.day}/${e.date.month}/${e.date.year}', style: const TextStyle(color: Colors.white70)),
+                    trailing: Text('${e.score} pts', style: pokeText(18, color: PokeColors.goldLight)),
+                  );
+                },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Abre el selector de foto de perfil a pantalla completa.
+Future<void> _pickAvatar(BuildContext context) async {
+  await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _AvatarPickerPage()));
+}
+
+/// Selector de foto de perfil: cualquiera de los 1025 Pokémon. Los
+/// primeros [kLocalAvatarMaxId] funcionan sin internet (PNG guardado en la
+/// app, ver `assets/images/avatars/`); del resto se piden por internet
+/// igual que el resto de la app — se marcan con la nube para que se note
+/// la diferencia.
+class _AvatarPickerPage extends StatefulWidget {
+  const _AvatarPickerPage();
+
+  @override
+  State<_AvatarPickerPage> createState() => _AvatarPickerPageState();
+}
+
+class _AvatarPickerPageState extends State<_AvatarPickerPage> {
+  static const _total = 1025;
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final q = _query.trim();
+    final asNumber = int.tryParse(q.replaceFirst('#', ''));
+    List<int> ids;
+    if (q.isEmpty) {
+      ids = List.generate(_total, (i) => i + 1);
+    } else if (asNumber != null) {
+      ids = asNumber >= 1 && asNumber <= _total ? [asNumber] : const [];
+    } else {
+      // Buscar por nombre necesita la lista de la Pokédex (con internet);
+      // si no cargó, simplemente no hay resultados por nombre todavía.
+      final dex = context.watch<PokedexProvider>();
+      final qn = q.toLowerCase().replaceAll(' ', '-');
+      ids = dex.all.where((p) => p.name.contains(qn)).map((p) => p.id).toList();
+    }
+    final showNone = q.isEmpty;
+
+    return PokeScaffold(
+      title: const PokeLogoText('Foto de perfil', size: 30, arched: true),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              controller: _search,
+              onChanged: (v) => setState(() => _query = v),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Buscar por nombre o número...',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                filled: true,
+                fillColor: Colors.white12,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Icon(Icons.cloud_outlined, size: 14, color: Colors.white54),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Del #${kLocalAvatarMaxId + 1} en adelante hace falta internet · #1-$kLocalAvatarMaxId funcionan sin conexión',
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: ids.isEmpty
+                ? const Center(child: Text('Sin resultados', style: TextStyle(color: Colors.white70)))
+                : GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.82,
+                    ),
+                    itemCount: ids.length + (showNone ? 1 : 0),
+                    itemBuilder: (context, i) {
+                      if (showNone && i == 0) {
+                        return _AvatarTile(
+                          selected: settings.avatarId == null,
+                          label: 'Ninguna',
+                          onTap: () {
+                            settings.setAvatar(null);
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+                            child: const Icon(Icons.person, color: Colors.white70, size: 32),
+                          ),
+                        );
+                      }
+                      final id = ids[i - (showNone ? 1 : 0)];
+                      final offline = id <= kLocalAvatarMaxId;
+                      return _AvatarTile(
+                        selected: settings.avatarId == id,
+                        label: '#${id.toString().padLeft(3, '0')}',
+                        badge: offline ? null : Icons.cloud_outlined,
+                        onTap: () {
+                          settings.setAvatar(id);
+                          Navigator.of(context).pop();
+                        },
+                        child: PokeImage(
+                          id: id,
+                          kind: PokeSpriteKind.artwork,
+                          fit: BoxFit.contain,
+                          cacheWidth: 128,
+                          preferLocalAvatar: true,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Una opción del selector: círculo con la imagen, aro dorado si está
+/// elegida, y una nubecita si esa en particular necesita internet.
+class _AvatarTile extends StatelessWidget {
+  final Widget child;
+  final bool selected;
+  final String label;
+  final IconData? badge;
+  final VoidCallback onTap;
+  const _AvatarTile({
+    required this.child,
+    required this.selected,
+    required this.label,
+    required this.onTap,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white10,
+                    border: Border.all(color: selected ? PokeColors.gold : Colors.white24, width: selected ? 3 : 1),
+                  ),
+                  child: ClipOval(child: child),
+                ),
+                if (badge != null)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Color(0xFF14224C), shape: BoxShape.circle),
+                      child: Icon(badge, size: 12, color: Colors.white70),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
     );
   }
 }

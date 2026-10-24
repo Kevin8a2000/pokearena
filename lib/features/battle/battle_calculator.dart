@@ -1,42 +1,95 @@
 import '../../core/models/pokemon.dart';
 import '../../core/models/type_relations.dart';
 
-/// Movimiento simple para el simulador (Sprint 3).
+/// Movimiento simple para el simulador (Sprint 3 + mejoras).
 class BattleMove {
   final String name;
   final String type;
   final int power;
+  final int maxPp;
+  final int accuracy; // 0-100
+  final bool isUltimate;
 
   const BattleMove({
     required this.name,
     required this.type,
     required this.power,
+    this.maxPp = 25,
+    this.accuracy = 100,
+    this.isUltimate = false,
   });
 }
 
-/// Genera 3-4 movimientos según los tipos del Pokémon.
-/// Siempre incluye Placaje (Normal 40) + STAB del tipo primario (50) +
-/// segundo tipo si es dual (50) + Hiperataque (Normal 70).
+/// Nombre vistoso por tipo (en vez del genérico "Ataque x").
+String moveNameForType(String type) {
+  return switch (type.toLowerCase()) {
+    'normal' => 'Golpe Cuerpo',
+    'fire' => 'Ascuas',
+    'water' => 'Pistola Agua',
+    'electric' => 'Impactrueno',
+    'grass' => 'Látigo Cepa',
+    'ice' => 'Viento Hielo',
+    'fighting' => 'Golpe Kárate',
+    'poison' => 'Picotazo Veneno',
+    'ground' => 'Terremoto',
+    'flying' => 'Ataque Ala',
+    'psychic' => 'Confusión',
+    'bug' => 'Picadura',
+    'rock' => 'Avalancha',
+    'ghost' => 'Bola Sombra',
+    'dragon' => 'Furia Dragón',
+    'dark' => 'Mordisco',
+    'steel' => 'Garra Metal',
+    'fairy' => 'Brillo Mágico',
+    _ => 'Ataque',
+  };
+}
+
+/// Genera 4 movimientos según los tipos del Pokémon, con PP y precisión.
+/// Placaje (40/35PP/95) + STAB primario (60/20PP/100) +
+/// segundo tipo si es dual (60/20PP/100) + Hiperataque (80/10PP/90).
 List<BattleMove> movesFor(PokemonDetail p) {
   final moves = <BattleMove>[
-    const BattleMove(name: 'Placaje', type: 'normal', power: 40),
+    const BattleMove(name: 'Placaje', type: 'normal', power: 40,
+        maxPp: 35, accuracy: 95),
   ];
   if (p.types.isNotEmpty) {
+    final t = p.types.first.toLowerCase();
     moves.add(BattleMove(
-      name: 'Ataque ${p.types.first}',
-      type: p.types.first,
-      power: 50,
+      name: moveNameForType(t),
+      type: t,
+      power: 60,
+      maxPp: 20,
+      accuracy: 100,
     ));
   }
   if (p.types.length > 1) {
+    final t = p.types[1].toLowerCase();
     moves.add(BattleMove(
-      name: 'Ataque ${p.types[1]}',
-      type: p.types[1],
-      power: 50,
+      name: moveNameForType(t),
+      type: t,
+      power: 60,
+      maxPp: 20,
+      accuracy: 100,
     ));
   }
-  moves.add(const BattleMove(name: 'Hiperataque', type: 'normal', power: 70));
+  moves.add(const BattleMove(
+      name: 'Hiperataque', type: 'normal', power: 80,
+      maxPp: 10, accuracy: 90));
   return moves;
+}
+
+/// Ultimate: se carga al combatir, poder 120 garantizado.
+BattleMove ultimateFor(PokemonDetail p) {
+  final t = p.types.isNotEmpty ? p.types.first.toLowerCase() : 'normal';
+  return BattleMove(
+    name: 'Movimiento Z ${moveNameForType(t)}',
+    type: t,
+    power: 120,
+    maxPp: 1,
+    accuracy: 100,
+    isUltimate: true,
+  );
 }
 
 /// Efectividad total de un tipo atacante contra los tipos defensores.

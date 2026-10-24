@@ -10,6 +10,12 @@ class ScoreHistoryService {
 
   final SharedPreferences? _prefs;
 
+  /// Dueño actual (login). null = historial global de antes del login.
+  String? _owner;
+  void setOwner(String? owner) => _owner = owner;
+  String get _key =>
+      _owner == null ? _storageKey : '${_storageKey}_u_$_owner';
+
   ScoreHistoryService([this._prefs]);
 
   Future<SharedPreferences> _getPrefs() async {
@@ -36,7 +42,7 @@ class ScoreHistoryService {
       currentList.insert(0, newEntry);
 
       final encoded = jsonEncode(currentList.map((e) => e.toJson()).toList());
-      await prefs.setString(_storageKey, encoded);
+      await prefs.setString(_key, encoded);
     } catch (_) {
       // Manejo silencioso: la app continúa si el almacenamiento falla
     }
@@ -46,7 +52,7 @@ class ScoreHistoryService {
   Future<List<ScoreEntry>> getHistory({String? gameName}) async {
     try {
       final prefs = await _getPrefs();
-      final raw = prefs.getString(_storageKey);
+      final raw = prefs.getString(_key);
       if (raw == null || raw.isEmpty) return [];
 
       final decoded = jsonDecode(raw) as List;
@@ -70,7 +76,7 @@ class ScoreHistoryService {
   Future<void> clearHistory() async {
     try {
       final prefs = await _getPrefs();
-      await prefs.remove(_storageKey);
+      await prefs.remove(_key);
     } catch (_) {
       // Sin bloqueo ante fallo
     }

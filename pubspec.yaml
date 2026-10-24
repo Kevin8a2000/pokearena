@@ -37,7 +37,8 @@ dependencies:
   http: ^1.6.0
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
-
+  web: ^1.1.1
+  audioplayers: ^6.8.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -48,6 +49,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -60,6 +63,26 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Imagen de marca: logo, fondos de Pokédex y avatares de perfil.
+  assets:
+    - assets/images/
+    - assets/images/icons/
+    # Avatares de perfil #1-120 guardados en la app (160x160, arte oficial
+    # de PokeAPI/sprites, achicado): funcionan sin internet. Del #121 en
+    # adelante el selector los carga por internet igual que el resto de la app.
+    - assets/images/avatars/
+    # Secuencia de intro (declaradas explícitas para forzar su empaquetado).
+    - assets/images/splash/splash_1.jpg
+    - assets/images/splash/splash_2.png
+    - assets/images/splash/splash_3.jpeg
+
+  # Fuente redondeada y gruesa para títulos y botones (Lilita One, SIL OFL 1.1;
+  # licencia en assets/fonts/OFL-LilitaOne.txt).
+  fonts:
+    - family: LilitaOne
+      fonts:
+        - asset: assets/fonts/LilitaOne-Regular.ttf
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -70,6 +93,30 @@ flutter:
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
+
+# Logotipo PokéArena (emblema Pikachu + Pokébola, arte fan propio).
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icons/logo_icon_1024.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/icons/logo_icon_1024.png"
+  web:
+    generate: true
+    image_path: "assets/images/icons/logo_icon_1024.png"
+    background_color: "#000000"
+    theme_color: "#E4572E"
+  windows:
+    generate: true
+    image_path: "assets/images/icons/logo_icon_1024.png"
+
+# Splash nativo de lanzamiento (fondo noche + insignia).
+flutter_native_splash:
+  color: "#0D1526"
+  image: assets/images/icons/logo_icon_1024.png
+  android: true
+  ios: true
+  web: true
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

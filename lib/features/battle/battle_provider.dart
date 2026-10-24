@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/models/pokemon.dart';
 import '../../core/models/type_relations.dart';
 import '../../core/services/pokeapi_service.dart';
+import '../../core/services/sound_service.dart';
 import 'battle_calculator.dart';
 
 enum BattlePhase { selecting, fighting, finished }
@@ -34,6 +35,11 @@ class BattleProvider extends ChangeNotifier {
   String? winner; // 'player' | 'enemy'
   final List<String> log = [];
   final Map<String, TypeRelations> _relations = {};
+
+  /// Callback opcional al ganar (lo conecta la UI con `WalletProvider`
+  /// para dar la recompensa, sin que este provider dependa de él
+  /// directamente).
+  VoidCallback? onWin;
 
   // Para animaciones de la UI: quién atacó último, cuánto pegó,
   // con qué efectividad, si fue crítico y un contador que cambia cada golpe.
@@ -82,6 +88,7 @@ class BattleProvider extends ChangeNotifier {
     playerMaxHp = p.stats['hp'] ?? 50;
     playerHp = playerMaxHp;
     playerMoves = movesFor(p);
+    SoundService.select();
     notifyListeners();
   }
 
@@ -147,6 +154,8 @@ class BattleProvider extends ChangeNotifier {
     if (enemyHp <= 0) {
       winner = 'player';
       log.add('¡Rival debilitado!');
+      SoundService.win();
+      onWin?.call();
       // Pausa dramática: se ve el K.O. en la arena antes del resultado.
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1500));
@@ -192,6 +201,7 @@ class BattleProvider extends ChangeNotifier {
     if (playerHp <= 0) {
       winner = 'enemy';
       log.add('¡Tu Pokémon se debilitó!');
+      SoundService.lose();
       // Pausa dramática del K.O. antes de mostrar el resultado.
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1500));

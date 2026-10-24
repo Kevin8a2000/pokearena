@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/models/pokemon.dart';
 import '../../core/services/pokeapi_service.dart';
+import '../../core/services/sound_service.dart';
 
 enum QuizPhase { idle, playing, revealing, finished }
 
@@ -57,6 +58,7 @@ class QuizProvider extends ChangeNotifier {
 
   void startGame() {
     if (!hasData) return;
+    SoundService.select();
     round = 0;
     score = 0;
     correctCount = 0;
@@ -68,6 +70,11 @@ class QuizProvider extends ChangeNotifier {
     if (round >= totalRounds) {
       phase = QuizPhase.finished;
       _timer?.cancel();
+      if (correctCount >= 6) {
+        SoundService.win();
+      } else {
+        SoundService.lose();
+      }
       notifyListeners();
       return;
     }
@@ -96,6 +103,7 @@ class QuizProvider extends ChangeNotifier {
     if (phase != QuizPhase.playing) return;
     if (secondsLeft > 0) {
       secondsLeft--;
+      if (secondsLeft <= 3 && secondsLeft > 0) SoundService.tick();
       notifyListeners();
     }
     if (secondsLeft <= 0) {
@@ -111,6 +119,9 @@ class QuizProvider extends ChangeNotifier {
     if (choice != null && choice.id == current!.id) {
       correctCount++;
       score += 10 + secondsLeft;
+      SoundService.correct();
+    } else {
+      SoundService.wrong();
     }
     phase = QuizPhase.revealing;
     notifyListeners();

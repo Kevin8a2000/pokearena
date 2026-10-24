@@ -6,17 +6,32 @@ import '../../core/services/pokeapi_service.dart';
 import '../../core/services/score_history_service.dart';
 import '../../core/theme/type_colors.dart';
 import '../team/team_provider.dart';
+import '../wallet/coin_chip.dart';
+import '../wallet/wallet_provider.dart';
 import 'battle_provider.dart';
 
 /// MÓDULO: Simulador de batalla (Sprint 3).
 /// Elige de tu equipo (o inicial) vs rival salvaje, por turnos.
-class BattlePage extends StatelessWidget {
+class BattlePage extends StatefulWidget {
   const BattlePage({super.key});
 
   @override
+  State<BattlePage> createState() => _BattlePageState();
+}
+
+class _BattlePageState extends State<BattlePage> {
+  @override
   Widget build(BuildContext context) {
+    // Conecta la recompensa de monedas al ganar sin que BattleProvider
+    // dependa directamente de WalletProvider.
+    final b = context.watch<BattleProvider>();
+    final wallet = context.read<WalletProvider>();
+    b.onWin = () => wallet.addCoins(50);
     return Scaffold(
-      appBar: AppBar(title: const Text('Simulador de batalla')),
+      appBar: AppBar(
+        title: const Text('Simulador de batalla'),
+        actions: const [CoinChip(golden: true), SizedBox(width: 12)],
+      ),
       body: Consumer<BattleProvider>(
         builder: (context, b, _) {
           switch (b.phase) {

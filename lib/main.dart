@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'core/services/pokeapi_service.dart';
 import 'core/services/score_history_service.dart';
 import 'features/home/home_shell.dart';
+import 'features/splash/splash_sequence.dart';
 import 'features/battle/battle_provider.dart';
+import 'features/wallet/wallet_provider.dart';
 import 'features/pokedex/pokedex_provider.dart';
 import 'features/profile/favorites_provider.dart';
 import 'features/profile/theme_provider.dart';
+import 'features/settings/settings_provider.dart';
 import 'features/quiz/quiz_provider.dart';
 import 'features/team/team_provider.dart';
 
@@ -48,6 +51,12 @@ class PokeArenaApp extends StatelessWidget {
         ChangeNotifierProvider<BattleProvider>(
           create: (ctx) => BattleProvider(ctx.read<PokeApiService>()),
         ),
+        ChangeNotifierProvider<WalletProvider>(
+          create: (_) => WalletProvider()..switchUser(null),
+        ),
+        ChangeNotifierProvider<SettingsProvider>(
+          create: (_) => SettingsProvider()..load(),
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -66,7 +75,7 @@ class PokeArenaApp extends StatelessWidget {
               ),
             ),
             themeMode: themeProvider.themeMode,
-            home: const HomeShell(),
+            home: const SplashSequence(child: HomeShell()),
           );
         },
       ),
