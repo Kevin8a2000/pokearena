@@ -11,6 +11,7 @@ import 'package:pokearena/features/battle/battle_provider.dart';
 import 'package:pokearena/features/profile/favorites_provider.dart';
 import 'package:pokearena/features/profile/profile_page.dart';
 import 'package:pokearena/features/profile/theme_provider.dart';
+import 'package:pokearena/features/profile/voice_provider.dart';
 import 'package:pokearena/features/quiz/quiz_page.dart';
 import 'package:pokearena/features/quiz/quiz_provider.dart';
 import 'package:pokearena/features/settings/settings_page.dart';
@@ -47,6 +48,7 @@ void main() {
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
           ChangeNotifierProvider<SettingsProvider>(create: (_) => SettingsProvider()),
           ChangeNotifierProvider<BattleProvider>(create: (_) => BattleProvider(api)),
+          ChangeNotifierProvider<VoiceProvider>(create: (_) => VoiceProvider()),
           ChangeNotifierProvider<QuizProvider>(create: (_) => QuizProvider(api)),
         ],
         child: MaterialApp(home: home),
