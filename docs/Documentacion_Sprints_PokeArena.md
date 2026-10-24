@@ -196,18 +196,19 @@ Completar los módulos Equipo y Perfil: equipo de hasta 6 Pokémon con persisten
 ### 1. Sprint Goal (objetivo del sprint)
 
 Sacar del placeholder los dos módulos que faltaban (Batalla y Quiz):
-un simulador de batalla por turnos contra un Bot con estadísticas y
-efectividad de tipo reales, y un Quiz de "adivina el Pokémon" por
-silueta con ranking y guardado en el historial creado en el Sprint 2.
+un simulador de batalla por turnos 1 contra 1 contra un rival salvaje
+aleatorio, con estadísticas y efectividad de tipo reales, y un Quiz de
+"adivina el Pokémon" por silueta con ranking y guardado en el historial
+creado en el Sprint 2.
 
 ### 2. Historias de usuario trabajadas
 
 | ID | Historia de usuario | Estado |
 |----|----------------------|--------|
-| B1 | Como usuario, quiero elegir hasta 3 Pokémon de mi equipo (o del inicial) para pelear contra un Bot. | ✅ Hecho |
+| B1 | Como usuario, quiero elegir un Pokémon de mi equipo (o uno inicial si aún no tengo equipo) para enfrentar a un rival salvaje aleatorio. | ✅ Hecho |
 | B2 | Como usuario, quiero que el daño se calcule con las estadísticas reales y la efectividad de tipo (x2/x1/x0.5/x0). | ✅ Hecho |
 | B3 | Como usuario, quiero ver golpes críticos y una arena animada, no solo texto. | ✅ Hecho |
-| B4 | Como usuario, quiero que el rival también use sus propios poderes, no solo ataques genéricos. | ✅ Hecho |
+| B4 | Como usuario, quiero que el rival también use sus propios poderes según su tipo, no solo ataques genéricos. | ✅ Hecho |
 | B5 | Como usuario, quiero un KO dramático y no que el combate corte en seco al ganar o perder. | ✅ Hecho |
 | B6 | Como equipo, queremos pruebas automáticas de la calculadora de daño/efectividad. | ✅ Hecho (varias pruebas en `battle_calculator_test.dart`) |
 | Q1 | Como usuario, quiero adivinar el Pokémon por su silueta antes de que se revele. | ✅ Hecho |
@@ -217,10 +218,11 @@ silueta con ranking y guardado en el historial creado en el Sprint 2.
 
 ### 3. Incremento entregado (qué se puede mostrar hoy)
 
-- Batalla: selección de hasta 3 Pokémon, combate por turnos contra un
-  Bot con daño calculado desde estadísticas base + efectividad de tipo,
-  golpes críticos, proyectiles por el tipo del poder usado (propio y del
-  rival) y una pantalla de KO antes de cerrar el combate.
+- Batalla: se elige un Pokémon del equipo para enfrentar a un rival
+  salvaje aleatorio, combate 1 contra 1 por turnos con daño calculado
+  desde estadísticas base + efectividad de tipo, golpes críticos,
+  proyectiles por el tipo del poder usado (propio y del rival) y una
+  pantalla de KO antes de cerrar el combate.
 - Quiz: silueta que se revela al acertar o agotar el tiempo, 10 rondas,
   temporizador por ronda, ranking local y la partida queda guardada en
   el historial ya construido en el Sprint 2 (`ScoreHistoryService`).
