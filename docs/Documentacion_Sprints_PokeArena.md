@@ -269,6 +269,93 @@ creado en el Sprint 2.
 
 ---
 
+## Sprint 4 — Economía y diseño visual
+**Duración planeada:** 20–26 oct 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint4-economia-diseno`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Antes de seguir agregando modos de batalla, se necesitaba una base común:
+un sistema de monedas (ganar jugando, gastar para desbloquear Pokémon) y
+un rediseño visual consistente ("colores Pokémon": marino + dorado) en
+las pantallas que ya existían, para que todo lo que se construya después
+se sienta parte de la misma app.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| W1 | Como usuario, quiero ganar monedas al vencer en Batalla. | ✅ Hecho |
+| W2 | Como usuario, quiero que los primeros 30 Pokémon de la Pokédex sean gratis y el resto se desbloquee con monedas según su generación. | ✅ Hecho |
+| W3 | Como usuario, quiero ver cuántas monedas tengo desde cualquier pantalla (Pokédex, Equipo, Batalla, Perfil). | ✅ Hecho |
+| D1 | Como usuario, quiero una Pokédex, Equipo, Perfil, Quiz y Ajustes con una identidad visual propia, no la plantilla de Material por defecto. | ✅ Hecho |
+| D2 | Como usuario, quiero una barra de navegación inferior con iconos ilustrados en vez de la genérica. | ✅ Hecho |
+| D3 | Como usuario, quiero elegir mi foto de perfil entre cualquiera de los 1025 Pokémon. | ✅ Hecho |
+| D4 | Como usuario, quiero una pantalla de bienvenida (splash) con el logo e identidad de la app, no la pantalla en blanco por defecto. | ✅ Hecho |
+| D5 | Como equipo, queremos un ícono y splash nativos propios (no el de Flutter) en Android/iOS/Web. | ✅ Hecho |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Monedero (`WalletProvider`): se gana al ganar una batalla clásica, se
+  gasta para desbloquear Pokémon más allá de los primeros 30 (precio
+  según su generación), con un chip dorado visible en Pokédex, Detalle,
+  Equipo y Batalla.
+- Rediseño completo con el mismo lenguaje visual (fondo marino con
+  Pokébolas, paneles con borde dorado, tipografía "Lilita One") en
+  Pokédex, Equipo, Perfil, Quiz y la nueva pantalla de Ajustes.
+- Barra de navegación inferior propia con 6 destinos ilustrados
+  (Pokédex, Equipo, Batalla, Quiz, Perfil, Ajustes).
+- Selector de foto de perfil ampliado a los 1025 Pokémon (antes 12 fijos).
+- Secuencia de bienvenida con 3 pantallas + precarga de la Pokédex, e
+  íconos/splash nativos generados con `flutter_launcher_icons` /
+  `flutter_native_splash`.
+- `flutter test`: **82/82 en verde**.
+
+### 4. Decisiones técnicas y su justificación
+
+1. **`WalletProvider` desacoplado de `BattleProvider`.** La recompensa se
+   conecta desde la pantalla (`BattlePage` asigna `battle.onWin`) en vez
+   de que `BattleProvider` importe `WalletProvider` directamente —
+   mantiene el simulador de batalla testeable sin depender de la
+   economía.
+2. **Reglas de precio/desbloqueo puras en `WalletRules`**, mismo patrón
+   que `TeamCoverageCalculator`/`battle_calculator.dart`: funciones
+   estáticas sin estado, fáciles de probar.
+3. **Un solo sistema de diseño (`poke_design.dart` + `core/widgets/`)**
+   reutilizado por las 5 pantallas rediseñadas, en vez de repetir estilos
+   sueltos en cada una.
+4. **Splash con precarga real**, no solo decorativa: mientras se ven las
+   3 imágenes de bienvenida se van pidiendo los artworks de la Pokédex,
+   así la app ya tiene caché al entrar.
+
+### 5. Pendiente / conocido
+
+- El propio módulo de Batalla (`battle_page.dart`) solo recibió el chip
+  de monedas; su rediseño visual completo llega en el Sprint 5 junto con
+  el nuevo modo de combate GBA.
+- Quedan pendientes para sprints siguientes: modo de batalla GBA con
+  tutorial (Sprint 5), modo 2.5D por hordas (Sprint 6), cuentas de
+  usuario + Duelo en tiempo real (Sprint 7) y audio/voces narradas
+  (Sprint 8).
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Separar `WalletRules` del provider permitió probar precios y reglas sin necesidad de `BattleProvider` ni red. | El sistema de sonido (`SoundService`) se adelantó a este sprint porque varias pantallas ya lo llamaban; conviene dejarlo explícito en el Sprint Goal la próxima vez en lugar de que aparezca "de paso". | Si una pieza de infraestructura (como el sonido) se nota necesaria a mitad de sprint, anotarla en el backlog del sprint en curso en vez de dejarla implícita. |
+| Rediseñar 5 pantallas con el mismo sistema (`poke_design.dart`) a la vez evitó inconsistencias entre ellas. | El selector de avatar ampliado a 1025 Pokémon depende de que la Pokédex ya haya cargado para buscar por nombre; sin conexión solo se puede buscar por número. | Documentar esa limitación en la ayuda del propio selector. |
+
+### 7. Evidencia para la sustentación
+
+- Commit `feat(wallet): sistema de monedas + rediseño visual` en
+  `feature/sprint4-economia-diseno`, mergeado a `main`.
+- `flutter test`: `All tests passed!` — 82 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:
