@@ -187,6 +187,86 @@ Completar los módulos Equipo y Perfil: equipo de hasta 6 Pokémon con persisten
 
 ---
 
+## Sprint 3 — Batalla y Quiz
+**Duración planeada:** 13–19 oct 2026
+**Repositorio:** github.com/Kevin8a2000/pokearena — rama `feature/sprint3-batalla-quiz`
+
+---
+
+### 1. Sprint Goal (objetivo del sprint)
+
+Sacar del placeholder los dos módulos que faltaban (Batalla y Quiz):
+un simulador de batalla por turnos contra un Bot con estadísticas y
+efectividad de tipo reales, y un Quiz de "adivina el Pokémon" por
+silueta con ranking y guardado en el historial creado en el Sprint 2.
+
+### 2. Historias de usuario trabajadas
+
+| ID | Historia de usuario | Estado |
+|----|----------------------|--------|
+| B1 | Como usuario, quiero elegir hasta 3 Pokémon de mi equipo (o del inicial) para pelear contra un Bot. | ✅ Hecho |
+| B2 | Como usuario, quiero que el daño se calcule con las estadísticas reales y la efectividad de tipo (x2/x1/x0.5/x0). | ✅ Hecho |
+| B3 | Como usuario, quiero ver golpes críticos y una arena animada, no solo texto. | ✅ Hecho |
+| B4 | Como usuario, quiero que el rival también use sus propios poderes, no solo ataques genéricos. | ✅ Hecho |
+| B5 | Como usuario, quiero un KO dramático y no que el combate corte en seco al ganar o perder. | ✅ Hecho |
+| B6 | Como equipo, queremos pruebas automáticas de la calculadora de daño/efectividad. | ✅ Hecho (varias pruebas en `battle_calculator_test.dart`) |
+| Q1 | Como usuario, quiero adivinar el Pokémon por su silueta antes de que se revele. | ✅ Hecho |
+| Q2 | Como usuario, quiero jugar 10 rondas con tiempo límite por ronda. | ✅ Hecho |
+| Q3 | Como usuario, quiero ver mi puntaje final y que quede guardado en mi historial (del Sprint 2). | ✅ Hecho |
+| Q4 | Como equipo, queremos pruebas automáticas del generador de opciones y del puntaje. | ✅ Hecho (`quiz_provider_test.dart`) |
+
+### 3. Incremento entregado (qué se puede mostrar hoy)
+
+- Batalla: selección de hasta 3 Pokémon, combate por turnos contra un
+  Bot con daño calculado desde estadísticas base + efectividad de tipo,
+  golpes críticos, proyectiles por el tipo del poder usado (propio y del
+  rival) y una pantalla de KO antes de cerrar el combate.
+- Quiz: silueta que se revela al acertar o agotar el tiempo, 10 rondas,
+  temporizador por ronda, ranking local y la partida queda guardada en
+  el historial ya construido en el Sprint 2 (`ScoreHistoryService`).
+- `flutter test`: **37/37 en verde** (29 del Sprint 2 + 8 nuevas de
+  `battle_calculator_test.dart`/`quiz_provider_test.dart`).
+
+### 4. Decisiones técnicas y su justificación
+
+1. **Cálculo de daño/efectividad separado en `battle_calculator.dart`**,
+   igual patrón que `TeamCoverageCalculator` del Sprint 2: función pura,
+   testeable sin Flutter ni red, que recibe estadísticas y tipos y
+   devuelve daño/efectividad/crítico.
+2. **`BattleProvider` orquesta turnos y estado**, dejando toda la
+   matemática al calculador; así la UI (`battle_page.dart`) solo
+   reacciona a cambios de estado (HP, log de combate, ganador).
+3. **Quiz reutiliza `ScoreHistoryService([prefs])`** del Sprint 2 tal
+   como se dejó planeado en su retro, sin tener que tocar su código.
+
+### 5. Pendiente / conocido
+
+- Esta acta se escribe al cerrar el sprint; el merge a `main` se hizo
+  en el mismo momento (ver evidencia).
+- Quedan fuera de este sprint (ya en marcha para los siguientes):
+  rediseño visual completo + sistema de monedas, un modo de batalla
+  estilo consola GBA con tutorial interactivo, un modo de batalla 2.5D
+  por hordas, Duelo en tiempo real con cuentas de usuario, y música/voces
+  narradas — cada uno se documentará como su propio sprint.
+
+### 6. Retrospectiva
+
+| Qué funcionó bien | Qué mejorar | Acuerdo para el próximo sprint |
+|---|---|---|
+| Reusar el patrón de "calculadora pura + provider" del Sprint 2 (cobertura de tipos) aceleró mucho el cálculo de daño y sus pruebas. | Varias mejoras de batalla (arena animada, críticos, poderes del rival, KO) se hicieron en commits sueltos después del commit "Sprint 3" inicial, en vez de agruparlas antes de avisar que el sprint estaba listo. | Cerrar cada commit grande con su propio `flutter test` en verde antes de seguir con el siguiente, para no acumular cambios sin cerrar. |
+| Reutilizar `ScoreHistoryService` del Sprint 2 sin modificarlo confirmó que separar esa lógica de la UI fue buena decisión. | Seguía sin existir `Backlog_Scrum_PokeArena.md` (pendiente desde el Sprint 2); los IDs B1-B6/Q1-Q4 de esta acta se infirieron del código y los tests. | Crear el backlog formal antes de seguir repartiendo trabajo en más sprints. |
+
+### 7. Evidencia para la sustentación
+
+- Commits en `feature/sprint3-batalla-quiz`: `4860acd feat(quiz)` →
+  `f1533d9 feat(battle)` → `a70dad7 feat(battle)` → `1042fa3 fix(battle)`
+  → `1c34ec8 feat(battle)`, mergeados a `main` con merge commit "Merge
+  Sprint 3: simulador de batalla por turnos + Quiz".
+- `flutter test`: `All tests passed!` — 37 pruebas.
+- Este documento como acta de Sprint Review + Retrospectiva.
+
+---
+
 ## Cómo seguir documentando (guía para ti)
 
 No necesitas saber Scrum de memoria para esto. Cada vez que cierres un sprint, solo responde estas preguntas y las paso a este mismo formato:
