@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/models/pokemon.dart';
 import '../../core/models/score_entry.dart';
+import '../../core/services/cry_service.dart';
 import '../../core/services/score_history_service.dart';
 import '../../core/theme/poke_design.dart';
 import '../../core/widgets/poke_image.dart';
@@ -642,6 +643,7 @@ class _AvatarPickerPageState extends State<_AvatarPickerPage> {
                         label: '#${id.toString().padLeft(3, '0')}',
                         badge: offline ? null : Icons.cloud_outlined,
                         onTap: () {
+                          CryService.playCry(id);
                           settings.setAvatar(id);
                           Navigator.of(context).pop();
                         },
