@@ -676,6 +676,14 @@ valores fijos escondidos en el código.
 - `PokemonVoiceService` (TTS neuronal de Fish Audio) está implementado
   pero todavía no se conectó al narrador; hoy la voz sale de `flutter_tts`.
 - La música es un único tema en loop; no cambia por pantalla ni por modo.
+- **Corregido tras el cierre** (`fix/avatar-picker-grito`): el selector de
+  foto de perfil (Ajustes > avatar) dejó de sonar el grito del Pokémon al
+  elegirlo durante el reparto de Sprints 4-8 — `CryService` había quedado
+  cableado solo a la batalla. Se restauró la llamada en
+  `profile_page.dart` y se agregó `test/avatar_picker_test.dart`
+  (`flutter test`: 495/495 en verde). El mismo botón de "Escuchar grito"
+  en la ficha de detalle del Pokémon (`pokemon_detail_page.dart`) también
+  se perdió en el reparto y sigue pendiente de restaurar.
 
 ### 6. Retrospectiva
 
