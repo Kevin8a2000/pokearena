@@ -681,9 +681,12 @@ valores fijos escondidos en el código.
   elegirlo durante el reparto de Sprints 4-8 — `CryService` había quedado
   cableado solo a la batalla. Se restauró la llamada en
   `profile_page.dart` y se agregó `test/avatar_picker_test.dart`
-  (`flutter test`: 495/495 en verde). El mismo botón de "Escuchar grito"
-  en la ficha de detalle del Pokémon (`pokemon_detail_page.dart`) también
-  se perdió en el reparto y sigue pendiente de restaurar.
+  (`flutter test`: 495/495 en verde).
+- **Corregido tras el cierre** (`fix/pokemon-detail-grito`): la ficha de
+  detalle del Pokémon también perdió su botón de "Escuchar grito" en el
+  reparto. Se restauró haciendo tocable el arte grande del Pokémon (con
+  un ícono de altavoz de referencia visual) y se agregó
+  `test/pokemon_detail_cry_test.dart` (`flutter test`: 496/496 en verde).
 
 ### 6. Retrospectiva
 

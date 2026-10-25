@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/models/evolution.dart';
 import '../../core/models/pokemon.dart';
+import '../../core/services/cry_service.dart';
 import '../../core/services/pokeapi_service.dart';
 import '../../core/theme/poke_design.dart';
 import '../../core/theme/type_colors.dart';
@@ -404,7 +405,8 @@ class _EvolutionTree extends StatelessWidget {
   }
 }
 
-/// Arte oficial sobre una Pokébola con halo; microanimación de escala al pasar el cursor (hover).
+/// Arte oficial sobre una Pokébola con halo; microanimación de escala al
+/// pasar el cursor (hover) y toque para escuchar el grito del Pokémon.
 class _AnimatedPokemonArtwork extends StatefulWidget {
   final int id;
   const _AnimatedPokemonArtwork({required this.id});
@@ -425,24 +427,45 @@ class _AnimatedPokemonArtworkState extends State<_AnimatedPokemonArtwork> {
         child: SizedBox(
           height: 270,
           width: 270,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Halo y Pokébola grande, tenue, detrás del Pokémon.
-              Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Color(0x88FFFFFF), blurRadius: 40, spreadRadius: 2)],
-                ),
-                child: const Opacity(opacity: 0.8, child: PokeBallIcon(size: 260)),
+          child: Semantics(
+            button: true,
+            label: 'Escuchar grito',
+            child: GestureDetector(
+              onTap: () => CryService.playCry(widget.id, volume: 0.7),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Halo y Pokébola grande, tenue, detrás del Pokémon.
+                  Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Color(0x88FFFFFF), blurRadius: 40, spreadRadius: 2)],
+                    ),
+                    child: const Opacity(opacity: 0.8, child: PokeBallIcon(size: 260)),
+                  ),
+                  AnimatedScale(
+                    scale: _isHovered ? 1.08 : 1.0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutBack,
+                    child: PokeImage(id: widget.id, height: 230, fit: BoxFit.contain),
+                  ),
+                  Positioned(
+                    bottom: 6,
+                    right: 18,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: PokeColors.goldLight,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                        boxShadow: const [BoxShadow(color: Colors.black45, offset: Offset(0, 2))],
+                      ),
+                      child: const Icon(Icons.volume_up, color: Colors.black, size: 20),
+                    ),
+                  ),
+                ],
               ),
-              AnimatedScale(
-                scale: _isHovered ? 1.08 : 1.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutBack,
-                child: PokeImage(id: widget.id, height: 230, fit: BoxFit.contain),
-              ),
-            ],
+            ),
           ),
         ),
       ),
